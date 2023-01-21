@@ -1,0 +1,40 @@
+#!/bin/bash
+
+NC='\033[0m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+GRAY='\033[0;37m'
+
+case $1 in
+  install)
+    [[ $# -gt 1 ]] && libraries="${*:2}" || libraries="*/"
+
+    for lib in $libraries; do
+      [[ ! -d "$lib" ]] && echo -e "${RED}The library \"$lib\" does not exist${NC}" && continue
+
+      cd "$lib" || exit
+      [[ ! -d cmake-install ]] && mkdir cmake-install
+
+      cd cmake-install || exit
+      cmake ..
+      sudo make install
+
+      cd ../..
+      echo -e "${GREEN}The library \"$lib\" has been installed${NC}"
+    done
+  ;;
+
+  clean)
+    for d in */; do
+        [[ -d "$d"/cmake-install ]] && flag=1 && sudo rm -r "$d"/cmake-install
+    done
+
+    [[ $flag -eq 1 ]] && echo -e "${GREEN}All cmake-install directories have been deleted${NC}" \
+                      || echo -e "${RED}No cmake-install directories have been found${NC}"
+  ;;
+
+  *)
+    echo -e "${RED}Usage:${NC} lib_manager [install|clean] ${GRAY}<...libs>${NC}"
+    exit 1
+  ;;
+esac
