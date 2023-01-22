@@ -21,7 +21,7 @@ XBee::~XBee() = default;
 
 /*!
  *  @brief  <br>Nettoyer le buffer et ouvrir la connexion UART
- *  @param  Configuration de port à utiliser
+ *  @param  mode Configuration de port à utiliser
  *  @return <b>500</b> succès
  *  @return <b>-501</b> Port série non trouvé
  *  @return <b>-502</b> Erreur lors de l'ouverture du port série

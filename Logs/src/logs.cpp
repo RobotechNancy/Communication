@@ -12,7 +12,7 @@ using namespace std;
 
 
 /*!
- * @brief \n Constructeur de la classe Logger
+ * @brief <br>Constructeur de la classe Logger
  * @param logger_name Nom du logger
  * @param logger_path Chemin du fichier de log
  */

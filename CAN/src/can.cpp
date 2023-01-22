@@ -19,7 +19,7 @@ Can::Can():
 
 
 /*!
- * @brief  \n Initialiser la carte liée au bus CAN
+ * @brief  <br>Initialiser la carte liée au bus CAN
  * @param  emit_addr L'adresse de réception de la carte
  * @return 0 ou un code d'erreur
  */
@@ -54,7 +54,7 @@ int Can::init(CAN_EMIT_ADDR emit_addr) {
 
 
 /*!
- * @brief \n Démarrer un thread d'écoute du bus CAN
+ * @brief <br>Démarrer un thread d'écoute du bus CAN
  */
 void Can::start_listen() {
     listen_thread = new thread;
@@ -151,7 +151,7 @@ void Can::process_resp(can_mess_t &response) {
 
 
 /*!
- * @brief  \n Récupérer un message reçu
+ * @brief  <br>Récupérer un message reçu
  * @param  id L'identifiant du message
  * @return Le message correspondant ou rien
  */
@@ -168,7 +168,7 @@ can_mess_t Can::get_message(uint8_t id) {
 
 
 /*!
- * @brief  \n Envoyer un message sur le bus CAN
+ * @brief  <br>Envoyer un message sur le bus CAN
  * @param  addr L'adresse du récepteur
  * @param  fct_code Le code fonction
  * @param  data Les données à envoyer

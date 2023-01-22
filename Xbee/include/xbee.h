@@ -25,7 +25,7 @@
 
 /*!
  * @typedef  frame_t
- * @brief    Format des trames reçues en fonction des paramètres de la trame
+ * @brief    <br>Format des trames reçues en fonction des paramètres de la trame
  */
 typedef struct {
     int start_seq;          /*!< Caractère de début de trame */
