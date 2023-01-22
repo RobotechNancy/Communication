@@ -1,5 +1,15 @@
+/*!
+ * @file can.h
+ * @version 1.0
+ * @date 2022-2023
+ * @author Julien PISTRE
+ * @brief Fichier source de la classe Can
+ * @details Version modifiée de la librairie de Théo RUSINOWITCH (v4.1a)
+ */
+
 #include "../include/can.h"
 using namespace std;
+
 
 Can::Can():
     sock(0),
@@ -7,6 +17,12 @@ Can::Can():
     logger("can")
 {}
 
+
+/*!
+ * @brief  \n Initialiser la carte liée au bus CAN
+ * @param  emit_addr L'adresse de réception de la carte
+ * @return 0 ou un code d'erreur
+ */
 int Can::init(CAN_EMIT_ADDR emit_addr) {
     ifreq ifr{};
     sockaddr_can addr{};
@@ -36,6 +52,10 @@ int Can::init(CAN_EMIT_ADDR emit_addr) {
     return 0;
 }
 
+
+/*!
+ * @brief \n Démarrer un thread d'écoute du bus CAN
+ */
 void Can::start_listen() {
     listen_thread = new thread;
     *listen_thread = thread(&Can::listen, this);
@@ -43,7 +63,8 @@ void Can::start_listen() {
     logger << "Thread d'écoute du CAN démarré" << mendl;
 }
 
-int Can::process_frame(can_message &response, can_frame frame) const {
+
+int Can::process_frame(can_mess_t &response, can_frame frame) const {
     if (read(sock, &frame, sizeof(struct can_frame)) < 0) {
         perror("Read");
         return CAN_E_READ_ERROR;
@@ -68,10 +89,11 @@ int Can::process_frame(can_message &response, can_frame frame) const {
     return 0;
 }
 
+
 [[noreturn]] void Can::listen() {
     while(true){
         can_frame frame{};
-        can_message response;
+        can_mess_t response;
 
         int err;
         if((err = process_frame(response, frame)) < 0){
@@ -95,9 +117,10 @@ int Can::process_frame(can_message &response, can_frame frame) const {
     }
 }
 
-void Can::process_resp(can_message &response) {
+
+void Can::process_resp(can_mess_t &response) {
     if(response.is_rep)
-        messages.insert(pair<int, can_message>(response.rep_id, response));
+        messages.insert(pair<int, can_mess_t>(response.rep_id, response));
 
     switch (response.emit_addr) {
         case CAN_ADDR_RASPBERRY_E:
@@ -126,17 +149,35 @@ void Can::process_resp(can_message &response) {
     }
 }
 
-can_message Can::get_message(uint8_t id) {
+
+/*!
+ * @brief  \n Récupérer un message reçu
+ * @param  id L'identifiant du message
+ * @return Le message correspondant ou rien
+ */
+can_mess_t Can::get_message(uint8_t id) {
     auto it = messages.find(id);
 
     if(it == messages.end())
         return {};
 
-    can_message msg = it->second;
+    can_mess_t msg = it->second;
     messages.erase(it);
     return msg;
 }
 
+
+/*!
+ * @brief  \n Envoyer un message sur le bus CAN
+ * @param  addr L'adresse du récepteur
+ * @param  fct_code Le code fonction
+ * @param  data Les données à envoyer
+ * @param  data_len La taille des données
+ * @param  is_rep Si le message est une réponse
+ * @param  rep_len Le nombre de réponses attendues
+ * @param  msg_id L'identifiant du message
+ * @return 0 ou un code d'erreur
+ */
 int Can::send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t *data, uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id) {
     if (data_len > 8) {
         logger << "Vous ne pouvez envoyer que 8 octets de data" << mendl;

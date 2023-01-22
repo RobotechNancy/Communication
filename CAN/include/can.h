@@ -1,3 +1,12 @@
+/*!
+ * @file can.h
+ * @version 1.0
+ * @date 2022-2023
+ * @author Julien PISTRE
+ * @brief Fichier d'en-tête de la classe Can
+ * @details Version modifiée de la librairie de Théo RUSINOWITCH (v4.1a)
+ */
+
 #ifndef RASPBERRY_H
 #define RASPBERRY_H
 
@@ -14,23 +23,27 @@
 #include "can_vars.h"
 #include "robotech/logs.h"
 
+
+/*!
+ * @class Can
+ * @brief Classe permettant de gérer la communication CAN
+ */
 class Can {
 private:
     int sock;
     std::thread *listen_thread;
-    std::map<uint8_t, can_message> messages;
+    std::map<uint8_t, can_mess_t> messages;
 
     [[noreturn]] void listen();
-    int process_frame(can_message &response, can_frame frame) const;
+    int process_frame(can_mess_t &response, can_frame frame) const;
+    void process_resp(can_mess_t &response);
 public:
     Can();
     Logger logger;
-    can_message get_message(uint8_t id);
+    can_mess_t get_message(uint8_t id);
 
     int init(CAN_EMIT_ADDR emit_addr);
     void start_listen();
-
-    void process_resp(can_message &response);
     int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id);
 };
 

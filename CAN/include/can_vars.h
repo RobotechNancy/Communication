@@ -1,33 +1,41 @@
-//
-// Created by mrspaar on 1/20/23.
-//
+/*!
+ * @file can_vars.h
+ * @version 1.0
+ * @date 2022-2023
+ * @author Julien PISTRE
+ * @brief Fichier contenant les variables globales du bus CAN
+ * @details Version modifiée de la librairie de Théo RUSINOWITCH (v4.1a)
+ */
 
 #ifndef CAN_CAN_VARS_H
 #define CAN_CAN_VARS_H
 
-#define CAN_BUS_NAME "vcan0"
+#define CAN_BUS_NAME "can0"
 
-//                                  0b00000000000000000000000000000
-//                                  Ob|1  |5   |10  |15  |20  |25 |29
-//                                  Ob|29 |25  |20  |15  |10  |5  |1
-#define CAN_FILTER_ADDR_EMETTEUR    0b01111000000000000000000000000
-#define CAN_FILTER_ADDR_RECEPTEUR   0b00000111100000000000000000000
-#define CAN_FILTER_CODE_FCT         0b00000000011111111000000000000
-#define CAN_FILTER_IDE_MSG          0b00000000000000000111111110000
-#define CAN_FILTER_IS_REP           0b00000000000000000000000001000
-#define CAN_FILTER_REP_NBR          0b00000000000000000000000000111
+//                                0b00000000000000000000000000000
+//                                Ob|1  |5   |10  |15  |20  |25 |29
+//                                Ob|29 |25  |20  |15  |10  |5  |1
+#define CAN_FILTER_ADDR_EMETTEUR  0b01111000000000000000000000000
+#define CAN_FILTER_ADDR_RECEPTEUR 0b00000111100000000000000000000
+#define CAN_FILTER_CODE_FCT       0b00000000011111111000000000000
+#define CAN_FILTER_IDE_MSG        0b00000000000000000111111110000
+#define CAN_FILTER_IS_REP         0b00000000000000000000000001000
+#define CAN_FILTER_REP_NBR        0b00000000000000000000000000111
 
-#define CAN_DECALAGE_ID_MSG         4
-#define CAN_DECALAGE_IS_REP         3
+#define CAN_DECALAGE_ID_MSG       4
+#define CAN_DECALAGE_IS_REP       3
 
-#define CAN_MAX_VALUE_ADDR  16
-#define CAN_MAX_VALUE_CODE_FCT  128
+#define CAN_MAX_VALUE_ADDR        16
+#define CAN_MAX_VALUE_CODE_FCT    128
 #define CAN_MAX_VALUE_REP_NBR
 
 
-// 0xF000000  (six 0)
-// 0b01111 0000 0000 0000 0000 0000 0000
-// Adresses d'émmission sur le bus can (de type 0xX00)
+/*!
+ * @enum    CAN_ADDR
+ * @brief   \n Adresses d'émission sur le bus CAN
+ * @example CAN_ADDR_BROADCAST = 0xF000000
+ * @details 0x?000000 ou bits 23 à 26
+ */
 typedef enum {
     CAN_ADDR_RASPBERRY =        0x1000000,
     CAN_ADDR_BASE_ROULANTE =    0x2000000,
@@ -36,9 +44,13 @@ typedef enum {
     CAN_ADDR_BROADCAST =        0xF000000,
 } CAN_ADDR;
 
-// 0x0F00000 (cinq 0)
-// 0b00000 1111 0000 0000 0000 0000 0000
-// Adresses de réception sur le bus can (de type 0xX00)
+
+/*!
+ * @enum    CAN_EMIT_ADDR
+ * @brief   Adresses de réception sur le bus CAN
+ * @example CAN_ADDR_BROADCAST_E = 0xF00000
+ * @details 0x?00000 ou bits 20 à 23
+ */
 typedef enum {
     CAN_ADDR_RASPBERRY_E =      0x100000,
     CAN_ADDR_BASE_ROULANTE_E =  0x200000,
@@ -48,8 +60,12 @@ typedef enum {
 } CAN_EMIT_ADDR;
 
 
-// 0xFF000 (trois 0)
-// 0b00000 0000 1111 1111 0000 0000 0000
+/*!
+ * @enum    CAN_FCT_CODE
+ * @brief   \n Codes fonction
+ * @example FCT_AVANCE = 0x010000
+ * @details 0x??000 ou bits 12 à 19
+ */
 typedef enum {
     FCT_AVANCE =                        0x01000,
     FCT_REP_AVANCE =                    0x81000,
@@ -61,18 +77,22 @@ typedef enum {
 } CAN_FCT_CODE;
 
 
+/*!
+ * @typedef can_mess_t
+ * @brief   \n Trame customisée pour le bus CAN
+ */
 typedef struct {
-    uint32_t recv_addr;
-    uint32_t emit_addr;
-    uint32_t fct_code;
-    uint8_t message_id;
+    uint32_t recv_addr;  /*!< Adresse de réception */
+    uint32_t emit_addr;  /*!< Adresse d'émission */
+    uint32_t fct_code;   /*!< Code fonction */
+    uint8_t message_id;  /*!< Identifiant du message */
 
-    bool is_rep;
-    uint8_t rep_id;
+    bool is_rep;         /*!< Indique si le message est une réponse */
+    uint8_t rep_id;      /*!< Identifiant de la réponse ou nombre de réponses attendues */
 
-    uint8_t data_len;
-    uint8_t data[8];
-} can_message;
+    uint8_t data_len;    /*!< Taille des données (max 8) */
+    uint8_t data[8];     /*!< Données (max 8 octets) */
+} can_mess_t;
 
 
 #define CAN_E_WRITE_ERROR (-501)
