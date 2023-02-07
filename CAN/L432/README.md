@@ -1,4 +1,4 @@
-# Librairie C++ du CAN (Raspberry)
+# Librairie C++ du CAN (L432KC)
 
 ## Installation
 
