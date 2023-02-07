@@ -1,0 +1,6 @@
+../Core/Src/can.c:20:6:is_valid_addr	152	static
+../Core/Src/can.c:31:6:is_valid_fct_code	96	static
+../Core/Src/can.c:53:6:HAL_CAN_RxFifo0MsgPendingCallback	112	static
+../Core/Src/can.c:76:6:configure_CAN	56	static
+../Core/Src/can.c:101:5:send	56	static
+../Core/Src/can.c:126:12:process_frame	56	static

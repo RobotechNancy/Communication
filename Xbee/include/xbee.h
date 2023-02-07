@@ -19,8 +19,8 @@
 #include <iterator>
 #include <robotech/logs.h>
 
-#include "../include/xbee_vars.h"
-#include "../include/serialib.h"
+#include "serialib.h"
+#include "xbee_vars.h"
 
 
 /*!

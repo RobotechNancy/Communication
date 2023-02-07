@@ -12,14 +12,19 @@ case $1 in
     for lib in $libraries; do
       [[ ! -d "$lib" ]] && echo -e "${RED}The library \"$lib\" does not exist${NC}" && continue
 
-      cd "$lib" || exit
+      if [ "$lib" == "CAN/" ]; then cd "$lib"/Raspberry || exit
+      else cd "$lib" || exit
+      fi
+
       [[ ! -d cmake-install ]] && mkdir cmake-install
 
       cd cmake-install || exit
       cmake ..
       sudo make install
 
-      cd ../..
+      if [ "$lib" == "CAN/" ]; then cd ../../.. || exit
+      else cd ../.. || exit
+      fi
       echo -e "${GREEN}The library \"$lib\" has been installed${NC}"
     done
   ;;
