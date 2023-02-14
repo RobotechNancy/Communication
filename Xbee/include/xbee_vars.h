@@ -46,6 +46,7 @@
 
 // Codes fonctions
 #define XB_FCT_TEST_ALIVE 0x07
+#define XB_FCT_ARUCO_POS  0x08
 
 #define XB_LIST_CODE_FCT (int[]) {XB_FCT_TEST_ALIVE}
 
