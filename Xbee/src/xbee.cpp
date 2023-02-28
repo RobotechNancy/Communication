@@ -506,7 +506,7 @@ int XBee::processFrame(vector<int> trame_recue) {
         return XB_TRAME_E_DEST;
     }
 
-    processCodeFct(trame.code_fct, trame.adr_emetteur);
+    processCodeFct(trame.code_fct, trame.adr_emetteur, trame.param);
 
     logger << "(process trame) trame n°" << trame.id_trame_high + trame.id_trame_low << "a été traitée avec succès "
             << mendl;
@@ -522,7 +522,7 @@ int XBee::processFrame(vector<int> trame_recue) {
  *  @return <b>-101</b> Code fonction incorrect
  *  @return <b>-102</b> Code fonction existant mais non implémenté
  */
-int XBee::processCodeFct(int code_fct, int exp) {
+int XBee::processCodeFct(int code_fct, int exp, vector<int> param) {
     if (!isCodeFctCorrect(code_fct)) {
         logger << "/!\\ (process code fonction) erreur " << XB_FCT_E_NOT_FOUND << " : code fonction incorrect "
                 << mendl;
@@ -532,9 +532,19 @@ int XBee::processCodeFct(int code_fct, int exp) {
     char msg[1];
 
     switch (code_fct) {
-    case XB_FCT_TEST_ALIVE :
+    case XB_FCT_TEST_ALIVE:
         msg[0] = {XB_V_ACK};
         sendTrame(exp, XB_FCT_TEST_ALIVE, msg);
+    break;
+    case XB_FCT_ARUCO_POS:
+        for (int i = 0; i < param.size()/4; i++) {
+            aruco_tags[i] = {
+                    param[4*i],
+                    (double) param[4*i+1],
+                    (double) param[4*i+2],
+                    (double) param[4*i+3]
+            };
+        }
     break;
     default :
         logger << "/!\\ (process code fonction) erreur " << XB_FCT_E_NONE_REACHABLE
@@ -813,41 +823,12 @@ int XBee::subTrame(vector<int> msg_recu) {
             if (trames_envoyees[XB_LIST_CODE_FCT[i]] == 0){
                 logger << "(verif reponse) les trames envoyées portant le code fonction " << XB_LIST_CODE_FCT[i] <<
                 " ont toutes reçues une réponse" << mendl;
-            }else{
+            } else {
                 logger << "(verif reponse) /!\\ les trames envoyées portant le code fonction "
                         << XB_LIST_CODE_FCT[i] << " n'ont pas toutes reçues une réponse" << mendl;
             }
         }
     }
-}
-
-/*!
- *  @brief Envoyer un mesage ASCII sans format particulier via XBee
- *  @param msg Le message à envoyer
- */
-void XBee::sendMsg(const string &msg) {
-    serial.writeString(stringToChar(msg));
-    logger << "(envoi message) message : " << msg << " envoyé avec succès" << mendl;
-}
-
-/*!
- *  @brief  <br>Convertir un string en chaine de caractère standard C
- *  @param  chaine Le string à convertir
- *  @return <b>message</b> La chaine de caractère convertie
- */
-char *XBee::stringToChar(const string &chaine) {
-    char *message = strcpy(new char[chaine.size() + 1], chaine.c_str());
-    return message;
-}
-
-/*!
- *  \brief  <br>Permet de convertir une chaine de caractère standard C en objet de type string
- *  \param  message La chaine de caractère à convertir
- *  \return <b>chaine</b> Le string converti
- */
-string XBee::charToString(char *message) {
-    string chaine = string(message);
-    return chaine;
 }
 
 /*!

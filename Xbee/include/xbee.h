@@ -23,6 +23,14 @@
 #include "xbee_vars.h"
 
 
+typedef struct {
+    int id;
+    double x;
+    double y;
+    double z;
+} aruco_t;
+
+
 /*!
  * @typedef  frame_t
  * @brief    <br>Format des trames reçues en fonction des paramètres de la trame
@@ -51,23 +59,20 @@ public:
     ~XBee();
 
     int openSerialConnection(int mode = 0);
-     void closeSerialConnection();
+    void closeSerialConnection();
 
     int checkATConfig();
-     bool readATResponse(const char *value = XB_AT_R_EMPTY, int mode = 0);
-     bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
-     bool writeATConfig();
+    bool readATResponse(const char *value = XB_AT_R_EMPTY, int mode = 0);
+    bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
+    bool writeATConfig();
 
     int sendTrame(uint8_t ad_dest, uint8_t code_fct, char *data = nullptr);
-     void sendMsg(const std::string &msg);
 
     [[noreturn]] void waitForATrame();
     [[noreturn]] void sendHeartbeat();
     [[noreturn]] int isXbeeResponding();
 
-     static std::string charToString(char *message);
-     static char *stringToChar(const std::string &chaine);
-     static void print(const std::vector<int> &v);
+    static void print(const std::vector<int> &v);
 private:
     serialib serial;
     Logger logger;
@@ -75,6 +80,7 @@ private:
     int MODE = 0;
     int ID_TRAME = 0;
     int trames_envoyees[100]{};
+    std::vector<aruco_t> aruco_tags;
 
     bool enterATMode();
     bool exitATMode();
@@ -88,7 +94,7 @@ private:
 
 
     int subTrame(std::vector<int> msg_recu);
-    int processCodeFct(int code_fct, int exp);
+    int processCodeFct(int code_fct, int exp, std::vector<int> param);
     static void afficherTrameRecue(const frame_t &trame);
     int processFrame(std::vector<int> trame_recue);
 
