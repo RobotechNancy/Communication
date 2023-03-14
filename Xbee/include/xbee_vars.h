@@ -18,25 +18,20 @@
 #define XB_PARITY_PRIMARY SERIAL_PARITY_NONE
 #define XB_STOPBITS_PRIMARY SERIAL_STOPBITS_1
 
-
-// Configuration d'usine par défaut des modules XBee neufs
-#define XB_SERIAL_PORT_DEFAULT "/dev/ttyUSB0"
-#define XB_BAUDRATE_DEFAULT 9600
-#define XB_DATABITS_DEFAULT SERIAL_DATABITS_8
-#define XB_PARITY_DEFAULT SERIAL_PARITY_NONE
-#define XB_STOPBITS_DEFAULT SERIAL_STOPBITS_1
-
 #define XB_V_ACK 0x06
 #define XB_V_NACK 0x15
 
 
 // Addresses des robots
-#define XB_ADR_BROADCAST 0x11
 #define XB_ADR_ROBOT_01 0x12
 #define XB_ADR_ROBOT_02 0x13
+#define XB_ADR_CAMERA   0x14
 
-#define XB_ADR_CURRENT_ROBOT XB_ADR_ROBOT_01
-#define XB_LIST_ADR (int[]){XB_ADR_BROADCAST, XB_ADR_ROBOT_01, XB_ADR_ROBOT_02}
+#define XB_NODE_1 "1\r"
+#define XB_NODE_2 "2\r"
+
+#define XB_ADR_CURRENT XB_ADR_ROBOT_01
+#define XB_LIST_ADR (int[]){XB_ADR_ROBOT_01, XB_ADR_ROBOT_02, XB_ADR_CAMERA}
 
 
 // Paramètres de la trame message
@@ -107,39 +102,60 @@
 #define XB_SER_E_UKN_PARITY (-509)
 
 
-// Commandes AT
+// Commandes et valeurs AT
 #define XB_AT_CMD_ENTER "+++"
 #define XB_AT_CMD_EXIT "ATCN"
 #define XB_AT_CMD_WRITE_CONFIG "ATWR"
+#define XB_AT_V_END_LINE "\r"
+
 #define XB_AT_CMD_API "ATAP"
+#define XB_AT_V_API "0\r"
+
 #define XB_AT_CMD_BAUDRATE "ATBD"
-#define XB_AT_CMD_AES "ATEE"
-#define XB_AT_CMD_AES_KEY "ATKY"
-#define XB_AT_CMD_CHANEL "ATCH"
-#define XB_AT_CMD_PAN_ID "ATID"
-#define XB_AT_CMD_COORDINATOR "ATCE"
+#define XB_AT_V_BAUDRATE "3\r"
+
 #define XB_AT_CMD_PARITY "ATNB"
+#define XB_AT_V_PARITY "0\r"
+
+#define XB_AT_CMD_AES "ATEE"
+#define XB_AT_V_AES "1\r"
+
+#define XB_AT_CMD_AES_KEY "ATKY"
+#define XB_AT_V_AES_KEY "32303032\r"
+
+#define XB_AT_CMD_CHANEL "ATCH"
+#define XB_AT_V_CHANEL "C\r"
+
+#define XB_AT_CMD_PAN_ID "ATID"
+#define XB_AT_V_PAN_ID "3332\r"
+
+#define XB_AT_CMD_COORDINATOR "ATCE"
+#if XB_ADR_CURRENT == XB_ADR_ROBOT_01
+    #define XB_AT_V_COORDINATOR "1\r"
+#else
+    #define XB_AT_V_COORDINATOR "0\r"
+#endif
+
+#define XB_AT_CMD_HIGH_DEST_ADDR "ATDH"
+#define XB_AT_V_HIGH_DEST_ADDR "0\r"
+
 #define XB_AT_CMD_16BIT_SOURCE_ADDR "ATMY"
 #define XB_AT_CMD_LOW_DEST_ADDR "ATDL"
-#define XB_AT_CMD_DISCOVER_NETWORK "ATND"
+#if XB_ADR_CURRENT == XB_ADR_CAMERA
+    #define XB_AT_V_16BIT_SOURCE_ADDR XB_NODE_2
+    #define XB_AT_V_LOW_DEST_ADDR XB_NODE_1
+#else
+    #define XB_AT_V_16BIT_SOURCE_ADDR XB_NODE_1
+    #define XB_AT_V_LOW_DEST_ADDR XB_NODE_2
+#endif
 
-// Valeurs AT
-#define XB_AT_V_END_LINE "\r"
-#define XB_AT_V_API "0\r"
-#define XB_AT_V_BAUDRATE "3\r"
-#define XB_AT_V_AES "1\r"
-#define XB_AT_V_AES_KEY "32303032\r"
-#define XB_AT_V_CHANEL "C\r"
-#define XB_AT_V_PAN_ID "3332\r"
-#define XB_AT_V_COORDINATOR "0\r"
-#define XB_AT_V_PARITY "0\r"
-#define XB_AT_V_16BIT_SOURCE_ADDR "1\r"
-#define XB_AT_V_LOW_DEST_ADDR "2\r"
-#define XB_AT_V_DISCOVER_NETWORK "167D2F1\r"
+#define XB_AT_CMD_DISCOVER_NETWORK "ATND"
+#define XB_AT_V_DISCOVER_NETWORK XB_AT_V_LOW_DEST_ADDR
 
 // Réponses AT
 #define XB_AT_R_EMPTY ""
 #define XB_AT_R_SUCCESS "OK\r"
+#define XB_AT_R_SUCCESS_2 "\rOK\r"
 #define XB_AT_R_ERROR "ERROR\r"
 
 // Mode AT

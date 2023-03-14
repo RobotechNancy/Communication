@@ -7,22 +7,21 @@
  * @details Version modifiée de la librairie de Samuel-Charles DITTE-DESTREE (v3.0)
  */
 
-#include "../include/xbee.h"
+#include "include/xbee.h"
 using namespace std;
 
 int main() {
     XBee xbee;
     int status;
 
-    if ((status = xbee.openSerialConnection()) != XB_SER_E_SUCCESS)
+    if ((status = xbee.openSerialConnection()) != XB_AT_E_SUCCESS) {
+        cout << "Error while opening serial connection" << endl;
         return status;
+    }
 
-    thread heartbeat(&XBee::sendHeartbeat, &xbee);
     thread waitingtrame(&XBee::waitForATrame, &xbee);
-    thread reponse(&XBee::isXbeeResponding, &xbee);
+    this_thread::sleep_for(chrono::seconds(3600));
 
-    this_thread::sleep_for(chrono::seconds(60));
-    xbee.closeSerialConnection();
-
+    //xbee.closeSerialConnection();
     return XB_E_SUCCESS;
 }

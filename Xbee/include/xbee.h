@@ -18,6 +18,7 @@
 #include <thread>
 #include <iterator>
 #include <robotech/logs.h>
+#include <map>
 
 #include "serialib.h"
 #include "xbee_vars.h"
@@ -58,7 +59,7 @@ public:
     XBee();
     ~XBee();
 
-    int openSerialConnection(int mode = 0);
+    int openSerialConnection();
     void closeSerialConnection();
 
     int checkATConfig();
@@ -66,38 +67,25 @@ public:
     bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
     bool writeATConfig();
 
-    int sendTrame(uint8_t ad_dest, uint8_t code_fct, char *data = nullptr);
-
+    int sendTrame(uint8_t ad_dest, uint8_t code_fct, const char *data = nullptr, int data_len = 1);
     [[noreturn]] void waitForATrame();
-    [[noreturn]] void sendHeartbeat();
-    [[noreturn]] int isXbeeResponding();
-
-    static void print(const std::vector<int> &v);
 private:
     serialib serial;
     Logger logger;
 
-    int MODE = 0;
     int ID_TRAME = 0;
-    int trames_envoyees[100]{};
+    std::map<int, bool> queue;
     std::vector<aruco_t> aruco_tags;
 
     bool enterATMode();
     bool exitATMode();
-
     bool discoverXbeeNetwork();
-
-    static bool isExpCorrect(int exp);
-    static bool isDestCorrect(int dest);
-    static bool isCodeFctCorrect(int code_fct);
-    static bool isTrameSizeCorrect(std::vector<int> trame);
 
 
     int subTrame(std::vector<int> msg_recu);
-    int processCodeFct(int code_fct, int exp, std::vector<int> param);
+    int processCodeFct(int code_fct, int exp, int id_trame, std::vector<int> param);
     static void afficherTrameRecue(const frame_t &trame);
     int processFrame(std::vector<int> trame_recue);
-
 
      std::vector<int> readBuffer();
      std::string readString();
@@ -105,11 +93,7 @@ private:
      static int crc16(const int trame[], uint8_t taille);
      static bool isCRCCorrect(uint8_t crc_low, uint8_t crc_high, int trame[], int trame_size);
 
-     static bool isStartSeqCorrect(int value);
-     static bool isEndSeqCorrect(int value);
-
      static void delay(unsigned int time);
-     static std::vector<int> slice(const std::vector<int> &v, int a, int b);
 };
 
 #endif // XBEE_H
