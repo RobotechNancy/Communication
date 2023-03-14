@@ -14,7 +14,7 @@ int main() {
     XBee xbee;
     int status;
 
-    if ((status = xbee.openSerialConnection()) != XB_AT_E_SUCCESS) {
+    if ((status = xbee.openSerialConnection()) != XB_E_AT_SUCCESS) {
         cout << "Error while opening serial connection" << endl;
         return status;
     }
@@ -22,6 +22,6 @@ int main() {
     thread waitingtrame(&XBee::waitForATrame, &xbee);
     this_thread::sleep_for(chrono::seconds(3600));
 
-    //xbee.closeSerialConnection();
+    xbee.closeSerialConnection();
     return XB_E_SUCCESS;
 }

@@ -73,27 +73,24 @@ private:
     serialib serial;
     Logger logger;
 
-    int ID_TRAME = 0;
-    std::map<int, bool> queue;
+    int nb_trame = 0;
     std::vector<aruco_t> aruco_tags;
 
     bool enterATMode();
     bool exitATMode();
     bool discoverXbeeNetwork();
 
-
     int subTrame(std::vector<int> msg_recu);
     int processCodeFct(int code_fct, int exp, int id_trame, std::vector<int> param);
-    static void afficherTrameRecue(const frame_t &trame);
     int processFrame(std::vector<int> trame_recue);
+    static void afficherTrameRecue(const frame_t &trame);
 
-     std::vector<int> readBuffer();
-     std::string readString();
+    static int crc16(const int trame[], uint8_t taille);
+    static bool isCRCCorrect(uint8_t crc_low, uint8_t crc_high, int trame[], int trame_size);
 
-     static int crc16(const int trame[], uint8_t taille);
-     static bool isCRCCorrect(uint8_t crc_low, uint8_t crc_high, int trame[], int trame_size);
-
-     static void delay(unsigned int time);
+    std::string readString();
+    std::vector<int> readBuffer();
+    static void delay(unsigned int time);
 };
 
 #endif // XBEE_H
