@@ -17,13 +17,11 @@
 #define XB_PARITY_PRIMARY SERIAL_PARITY_NONE
 #define XB_STOPBITS_PRIMARY SERIAL_STOPBITS_1
 
-#define XB_ADR_ROBOT_01 0x12
-#define XB_ADR_ROBOT_02 0x13
-#define XB_ADR_CAMERA   0x14
+#define XB_ADR_ROBOT_01   0x12
+#define XB_ADR_ROBOT_02   0x13
+#define XB_ADR_CAMERA_01  0x14
+#define XB_ADR_CAMERA_02  0x15
 #define XB_ADR_CURRENT XB_ADR_ROBOT_01
-
-#define XB_NODE_1 "1\r"
-#define XB_NODE_2 "2\r"
 
 
 // Paramètres de la trame message
@@ -44,12 +42,14 @@
 #define XB_ADR_E_UNKNOWN (-103)
 
 #define XB_TRAME_E_SUCCESS 200
+#define XB_TRAME_E_WRONG_ADR (-203)
 #define XB_TRAME_E_CRC (-204)
 #define XB_TRAME_E_DATALEN (-205)
 #define XB_TRAME_E_START (-206)
 #define XB_TRAME_E_END (-207)
 
 #define XB_SUBTRAME_E_SUCCESS 300
+#define XB_SUBTRAME_E_NONE (-301)
 
 #define XB_AT_E_SUCCESS 400
 #define XB_AT_E_ENTER (-401)
@@ -65,7 +65,6 @@
 #define XB_AT_E_LOW_DEST_ADDR (-411)
 #define XB_AT_E_EXIT (-412)
 #define XB_AT_E_WRITE_CONFIG (-413)
-#define XB_AT_E_DISCOVER_NETWORK (-414)
 
 #define XB_SER_E_SUCCESS 500
 #define XB_SER_E_NOT_FOUND (-501)
@@ -113,26 +112,25 @@
     #define XB_AT_V_COORDINATOR "0\r"
 #endif
 
+#define XB_AT_CMD_LOW_DEST_ADDR "ATDL"
+#define XB_AT_V_LOW_DEST_ADDR "FFFF\r"
 #define XB_AT_CMD_HIGH_DEST_ADDR "ATDH"
 #define XB_AT_V_HIGH_DEST_ADDR "0\r"
 
 #define XB_AT_CMD_16BIT_SOURCE_ADDR "ATMY"
-#define XB_AT_CMD_LOW_DEST_ADDR "ATDL"
-#if XB_ADR_CURRENT == XB_ADR_CAMERA
-    #define XB_AT_V_16BIT_SOURCE_ADDR XB_NODE_2
-    #define XB_AT_V_LOW_DEST_ADDR XB_NODE_1
-#else
-    #define XB_AT_V_16BIT_SOURCE_ADDR XB_NODE_1
-    #define XB_AT_V_LOW_DEST_ADDR XB_NODE_2
+#if XB_ADR_CURRENT == XB_ADR_ROBOT_01
+    #define XB_AT_V_16BIT_SOURCE_ADDR "1\r"
+#elif XB_ADR_CURRENT == XB_ADR_ROBOT_02
+    #define XB_AT_V_16BIT_SOURCE_ADDR "2\r"
+#elif XB_ADR_CURRENT == XB_ADR_CAMERA_01
+    #define XB_AT_V_16BIT_SOURCE_ADDR "3\r"
+#elif XB_ADR_CURRENT == XB_ADR_CAMERA_02
+    #define XB_AT_V_16BIT_SOURCE_ADDR "4\r"
 #endif
-
-#define XB_AT_CMD_DISCOVER_NETWORK "ATND"
-#define XB_AT_V_DISCOVER_NETWORK XB_AT_V_LOW_DEST_ADDR
 
 // Réponses AT
 #define XB_AT_R_EMPTY ""
 #define XB_AT_R_SUCCESS "OK\r"
-#define XB_AT_R_SUCCESS_2 "\rOK\r"
 
 // Mode AT
 #define XB_AT_M_GET 1

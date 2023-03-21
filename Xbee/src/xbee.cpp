@@ -11,12 +11,6 @@
 using namespace std;
 
 
-// Constructeurs et destructeurs
-
-XBee::XBee(): logger("xbee") {}
-XBee::~XBee() = default;
-
-
 // Configuration et initialisation
 
 /*!
@@ -85,7 +79,6 @@ void XBee::closeSerialConnection() {
  *  @return <b>-411</b> Impossible de configuer l'adresse de destination
  *  @return <b>-412</b> Impossible de sortir du mode AT
  *  @return <b>-413</b> Impossible d'écrire les paramètres dans la mémoire flash
- *  @return <b>-414</b> Impossible d'établir une connexion avec le module XBee distant
  */
 int XBee::checkATConfig() {
     if (enterATMode())
@@ -111,8 +104,8 @@ int XBee::checkATConfig() {
         logger << "(config AT) nombre de bits de parité configuré avec succès" << mendl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_PARITY
-               << " : impossible d'écrire les paramètres dans la mémoire flash" << mendl;
-        return XB_AT_E_WRITE_CONFIG;
+               << " : impossible de configurer la parité" << mendl;
+        return XB_AT_E_PARITY;
     }
 
     if (sendATCommand(XB_AT_CMD_API, XB_AT_V_API, XB_AT_M_GET))
@@ -208,14 +201,6 @@ int XBee::checkATConfig() {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_WRITE_CONFIG
                << " : impossible d'écrire les paramètres dans la mémoire flash" << mendl;
         return XB_AT_E_WRITE_CONFIG;
-    }
-
-    if (discoverXbeeNetwork())
-        logger << "(config AT) connexion XBee établie avec succès avec le module distant" << mendl;
-    else {
-        logger << "/!\\ (config AT) erreur " << XB_AT_E_DISCOVER_NETWORK
-               << " : impossible d'établir une connexion avec le module XBee distant" << mendl;
-        return XB_AT_E_DISCOVER_NETWORK;
     }
 
     if (!exitATMode()) {
@@ -319,25 +304,6 @@ bool XBee::writeATConfig() {
 }
 
 
-/*!
- *  @brief  <br>Recherche du module XBee distant de l'autre robot
- *  @return <b>true</b> Le bon module XBee est détecté
- *  @return <b>false</b> Aucun module XBee détecté ou module XBee incorrect détecté
- */
-bool XBee::discoverXbeeNetwork() {
-    serial.writeString(XB_AT_CMD_DISCOVER_NETWORK);
-    serial.writeString(XB_AT_V_END_LINE);
-    logger << "(config AT) lancement de la découverte réseau XBee" << mendl;
-
-    delay(2);
-    string response;
-    readRx<string>(response);
-
-    serial.flushReceiver();
-    return response[0] == XB_AT_V_DISCOVER_NETWORK[0];
-}
-
-
 // Envoi/Réception/Traitement des trames de messages
 
 /*!
@@ -348,7 +314,7 @@ bool XBee::discoverXbeeNetwork() {
 
     if (XB_ADR_CURRENT == XB_ADR_ROBOT_01) {
         char msg[1] = {XB_V_ACK};
-        sendFrame(XB_ADR_CAMERA, XB_FCT_TEST_ALIVE, msg, 1);
+        sendFrame(XB_ADR_CAMERA_01, XB_FCT_TEST_ALIVE, msg, 1);
     }
 
     while (true) {
@@ -357,9 +323,32 @@ bool XBee::discoverXbeeNetwork() {
 
         if (serial.available() > 0) {
             readRx<vector<int>>(response);
-            subTrame(response);
+            processResponse(response);
         }
     }
+}
+
+
+int XBee::processResponse(const vector<int> &response) {
+    vector<int> buffer{};
+    int status = -1;
+    logger << "(process trame) trame reçue" << mendl;
+
+    for (int i : response) {
+        buffer.push_back(i);
+
+        if (i == XB_V_END) {
+            status = processSubFrame(buffer);
+            buffer.clear();
+        }
+    }
+
+    if (status == -1) {
+        logger << "/!\\ (process trame) erreur " << XB_SUBTRAME_E_NONE << " : Aucune sous-trame valide " << mendl;
+        return XB_TRAME_E_START;
+    }
+
+    return status;
 }
 
 
@@ -367,19 +356,20 @@ bool XBee::discoverXbeeNetwork() {
  *  @brief  <br>Découpe le résultat de la lecture du buffer en différentes trames
  *  @param  recv_msg Le résultat de la lecture du buffer
  *  @return <b>300</b> Succès
+ *  @return <b>-203</b> La trame n'est pas adressé au module
  *  @return <b>-204</b> La vérification du CRC a échoué
  *  @return <b>-205</b> La longueur des données est incorrecte
  *  @return <b>-206</b> La séquence de début est incorrecte
  *  @return <b>-207</b> La longueur de données est incorrecte
  */
-int XBee::subTrame(vector<int> recv_msg) {
+int XBee::processSubFrame(vector<int> &recv_msg) {
+    int data_len = recv_msg[5] - XB_V_SEQ_SHIFT;
+    printFrame(recv_msg, data_len);
+
     if (recv_msg[0] != XB_V_START) {
         logger << "/!\\ (process trame) erreur " << XB_TRAME_E_START << " : Séquence de début incorrect " << mendl;
         return XB_TRAME_E_START;
     }
-
-    // TODO : plusieurs trames dans le buffer
-    int data_len = recv_msg[5] - XB_V_SEQ_SHIFT;
 
     if (data_len > 255) {
         logger << "/!\\ (process trame) erreur " << XB_TRAME_E_DATALEN << " : Longueur de données incorrecte " << mendl;
@@ -395,7 +385,7 @@ int XBee::subTrame(vector<int> recv_msg) {
     for (int i = 0; i < 6 + data_len; i++)
         msg_slice[i] = recv_msg[i];
 
-    if (!isCRCCorrect(recv_msg[7 + data_len], recv_msg[8 + data_len], msg_slice, data_len + 6)) {
+    if (!validateCRC(recv_msg[7 + data_len], recv_msg[8 + data_len], msg_slice, data_len + 6)) {
         logger << "/!\\ (process trame) erreur " << XB_TRAME_E_CRC << " : CRC incorrect "
                << mendl;
         return XB_TRAME_E_CRC;
@@ -415,8 +405,12 @@ int XBee::subTrame(vector<int> recv_msg) {
  *  @brief  <br>Traiter une trame reçue par le XBee
  *  @param  recv_frame La trame reçue par le XBee
  *  @return <b>200</b> Succès
+ *  @return <b>-203</b> La trame n'est pas adressé au module
  */
 int XBee::processFrame(vector<int> recv_frame) {
+    if (XB_ADR_CURRENT != recv_frame[2])
+        return XB_TRAME_E_WRONG_ADR;
+
     frame_t frame = {
             .start_seq = recv_frame[0],
             .adr_emetteur = recv_frame[1],
@@ -433,8 +427,7 @@ int XBee::processFrame(vector<int> recv_frame) {
 
     for (int i = 0; i < frame.nb_octets_msg; i++)
         frame.param.push_back(recv_frame[7 + i]);
-
-    printFrame(frame);
+    
     processFctCode(frame.code_fct, frame.adr_emetteur, frame.param);
 
     logger << "(process frame) frame n°" << frame.id_trame_high + frame.id_trame_low
@@ -452,11 +445,12 @@ int XBee::processFrame(vector<int> recv_frame) {
  *  @return <b>-102</b> Code fonction inconnu
  *  @return <b>-103</b> Adresse inconnue
  */
-int XBee::processFctCode(int fct_code, int exp, vector<int> data) {
+int XBee::processFctCode(int fct_code, int exp, const vector<int> &data) {
     char msg[1] = {XB_V_ACK};
 
     switch (exp) {
-        case XB_ADR_CAMERA:
+        case XB_ADR_CAMERA_01:
+        case XB_ADR_CAMERA_02:
         case XB_ADR_ROBOT_01:
         case XB_ADR_ROBOT_02:
         break;
@@ -494,8 +488,8 @@ int XBee::processFctCode(int fct_code, int exp, vector<int> data) {
  *  @param  dest L'adresse du destinataire du message
  *  @param  fct_code Le code de la fonction concernée par le message
  *  @param  data Les valeurs des paramètres demandées par le code fonction
- *  @return <b>XB_TRAME_E_SUCCESS</b> Succès
- *  @return <b>XB_TRAME_E_DATALEN</b> La taille des données est trop grande
+ *  @return <b>200</b> Succès
+ *  @return <b>-205</b> La taille des données est trop grande
  */
 int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const char *data, int data_len) {
     if (data_len > 255) {
@@ -534,6 +528,7 @@ int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const char *data, int data_l
     frame[data_len + 8] = crc_high;
     frame[data_len + 9] = XB_V_END;
 
+    printFrame<uint8_t*>(frame, data_len);
     serial.writeBytes(frame, frame_len);
     logger << "(sendFrame) envoi de la frame n°" << dec << frame_id_low + frame_id_high
                                                  << " effectué avec succès" << mendl;
@@ -545,21 +540,23 @@ int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const char *data, int data_l
 /*!
  *  @brief <br>Afficher les données découpées d'une structure de type frame_t
  */
-void XBee::printFrame(const frame_t &trame) {
+template<typename T>
+void XBee::printFrame(const T &frame, int data_len) {
     cout << hex << showbase;
-    cout << "\t-> Start seq : " << trame.start_seq << endl;
-    cout << "\t-> Emetteur : " << trame.adr_emetteur << endl;
-    cout << "\t-> Destinataire : " << trame.adr_dest << endl;
-    cout << "\t-> Id trame  : " << trame.id_trame_low << " " << trame.crc_high << endl;
-    cout << "\t-> Taille msg : " << trame.nb_octets_msg << endl;
-    cout << "\t-> Code fct : " << trame.code_fct << endl;
+    cout << "\t-> Start seq : " << (int) frame[0] << endl;
+    cout << "\t-> Emetteur : " << (int) frame[1] << endl;
+    cout << "\t-> Destinataire : " << (int) frame[2] << endl;
+    cout << "\t-> Id trame  : " << (int) frame[3] << " " << (int) frame[4] << endl;
+    cout << "\t-> Taille msg : " << (int) frame[5] << endl;
+    cout << "\t-> Code fct : " << (int) frame[6] << endl;
     cout << "\t-> Data : ";
 
-    copy(trame.param.begin(), trame.param.end(), ostream_iterator<int>(cout << hex, " "));
+    for (int i = 0; i < data_len; i++)
+        cout << (int) frame[7+i] << " ";
     cout << endl;
 
-    cout << "\t-> CRC : " << trame.crc_low << " " << trame.crc_high << endl;
-    cout << "\t-> End seq : " << trame.end_seq << endl;
+    cout << "\t-> CRC : " << (int) frame[data_len+7] << " " << (int) frame[data_len+8] << endl;
+    cout << "\t-> End seq : " << (int) frame[data_len+9] << endl;
 }
 
 
@@ -600,13 +597,13 @@ int XBee::computeCRC(const int frame[], uint8_t frame_len) {
  *  @return <b>true</b> La valeur du CRC reçue est bien celle calculée à partir du reste de la trame
  *  @return <b>false</b> La valeur du CRC est incohérente ou non calculable
  */
-bool XBee::isCRCCorrect(uint8_t crc_low, uint8_t crc_high, int frame[], int frame_len) {
+bool XBee::validateCRC(uint8_t crc_low, uint8_t crc_high, int frame[], int frame_len) {
     int crc = computeCRC(frame, frame_len);
 
-    uint8_t newcrc_low = crc & 0xFF;
-    uint8_t newcrc_high = (crc >> 8) & 0xFF;
+    uint8_t new_crc_low = crc & 0xFF;
+    uint8_t new_crc_high = (crc >> 8) & 0xFF;
 
-    return (newcrc_low == crc_low) && (newcrc_high == crc_high);
+    return (new_crc_low == crc_low) && (new_crc_high == crc_high);
 }
 
 

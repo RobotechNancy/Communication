@@ -56,16 +56,11 @@ typedef struct {
  */
 class XBee {
 public:
-    XBee();
-    ~XBee();
+    XBee(): logger("xbee") {};
+    ~XBee() = default;
 
     int openSerialConnection();
     void closeSerialConnection();
-
-    int checkATConfig();
-    bool readATResponse(const char *value = XB_AT_R_EMPTY, int mode = 0);
-    bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
-    bool writeATConfig();
 
     int sendFrame(uint8_t dest, uint8_t fct_code, const char *data = nullptr, int data_len = 1);
     [[noreturn]] void waitForATrame();
@@ -78,15 +73,20 @@ private:
 
     bool enterATMode();
     bool exitATMode();
-    bool discoverXbeeNetwork();
+    int checkATConfig();
+    bool writeATConfig();
+    bool readATResponse(const char *value = XB_AT_R_EMPTY, int mode = 0);
+    bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
 
-    int subTrame(std::vector<int> recv_msg);
-    int processFctCode(int fct_code, int exp, std::vector<int> data);
+    int processResponse(const std::vector<int> &response);
+    int processSubFrame(std::vector<int> &recv_msg);
+    int processFctCode(int fct_code, int exp, const std::vector<int> &data);
     int processFrame(std::vector<int> recv_frame);
 
-    static void printFrame(const frame_t &trame);
+    template<typename T>
+    static void printFrame(const T &frame, int data_len);
     static int computeCRC(const int frame[], uint8_t frame_len);
-    static bool isCRCCorrect(uint8_t crc_low, uint8_t crc_high, int frame[], int frame_len);
+    static bool validateCRC(uint8_t crc_low, uint8_t crc_high, int frame[], int frame_len);
 
     template<typename T> void readRx(T &buffer);
     static void delay(float seconds);
