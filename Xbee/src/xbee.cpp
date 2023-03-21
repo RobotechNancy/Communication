@@ -14,18 +14,18 @@ using namespace std;
 // Configuration et initialisation
 
 /*!
- *  @brief  <br>Nettoyer le buffer et ouvrir la connexion UART
+ *  @brief  Nettoyer le buffer et ouvrir la connexion UART
  *  @param  mode Configuration de port à utiliser
- *  @return <b>500</b> succès
- *  @return <b>-501</b> Port série non trouvé
- *  @return <b>-502</b> Erreur lors de l'ouverture du port série
- *  @return <b>-503</b> Erreur lors de la récupération des informations du port série
- *  @return <b>-504</b> Baudrate non reconnu
- *  @return <b>-505</b> Erreur lors de l'écriture de la configuration du port série
- *  @return <b>-506</b> Erreur lors de l'écriture du timeout
- *  @return <b>-507</b> Databits non reconnus
- *  @return <b>-508</b> Stopbits non reconnus
- *  @return <b>-509</b> Parité non reconnue
+ *  @return 500 succès
+ *  @return -501 Port série non trouvé
+ *  @return -502 Erreur lors de l'ouverture du port série
+ *  @return -503 Erreur lors de la récupération des informations du port série
+ *  @return -504 Baudrate non reconnu
+ *  @return -505 Erreur lors de l'écriture de la configuration du port série
+ *  @return -506 Erreur lors de l'écriture du timeout
+ *  @return -507 Databits non reconnus
+ *  @return -508 Stopbits non reconnus
+ *  @return -509 Parité non reconnue
  */
 int XBee::openSerialConnection() {
     int status = serial.openDevice(
@@ -50,7 +50,7 @@ int XBee::openSerialConnection() {
 
 
 /*!
-    \brief <br>Nettoyer le buffer et fermer la connexion UART
+    \brief Nettoyer le buffer et fermer la connexion UART
  */
 void XBee::closeSerialConnection() {
     serial.flushReceiver();
@@ -64,21 +64,21 @@ void XBee::closeSerialConnection() {
 // Configuration en mode AT
 
 /*!
- *  @brief  <br>Vérifier et paramétrer la configuration un module XBee
- *  @return <b>400</b> Succès
- *  @return <b>-401</b> Impossible d'entrer dans le mode AT
- *  @return <b>-402</b> Impossible de configurer le mode API
- *  @return <b>-403</b> Impossible de configurer le baudrate
- *  @return <b>-404</b> Impossible de configurer le paramètre de chiffrement AES
- *  @return <b>-405</b> Impossible de configurer la clé de chiffrement AES
- *  @return <b>-406</b> Impossible de configurer le canal de découverte réseau
- *  @return <b>-407</b> Impossible de configurer l'ID du réseau
- *  @return <b>-408</b> Impossible de configurer le mode coordinateur
- *  @return <b>-409</b> Impossible de configurer le nombre de bits de parité
- *  @return <b>-410</b> Impossible de configurer l'adresse source 16bits
- *  @return <b>-411</b> Impossible de configuer l'adresse de destination
- *  @return <b>-412</b> Impossible de sortir du mode AT
- *  @return <b>-413</b> Impossible d'écrire les paramètres dans la mémoire flash
+ *  @brief  Vérifier et paramétrer la configuration un module XBee
+ *  @return 400 Succès
+ *  @return -401 Impossible d'entrer dans le mode AT
+ *  @return -402 Impossible de configurer le mode API
+ *  @return -403 Impossible de configurer le baudrate
+ *  @return -404 Impossible de configurer le paramètre de chiffrement AES
+ *  @return -405 Impossible de configurer la clé de chiffrement AES
+ *  @return -406 Impossible de configurer le canal de découverte réseau
+ *  @return -407 Impossible de configurer l'ID du réseau
+ *  @return -408 Impossible de configurer le mode coordinateur
+ *  @return -409 Impossible de configurer le nombre de bits de parité
+ *  @return -410 Impossible de configurer l'adresse source 16bits
+ *  @return -411 Impossible de configuer l'adresse de destination
+ *  @return -412 Impossible de sortir du mode AT
+ *  @return -413 Impossible d'écrire les paramètres dans la mémoire flash
  */
 int XBee::checkATConfig() {
     if (enterATMode())
@@ -214,12 +214,12 @@ int XBee::checkATConfig() {
 
 
 /*!
- *  @brief  <br>Envoyer une commmande AT en UART via le port série
+ *  @brief  Envoyer une commmande AT en UART via le port série
  *  @param  command Le paramètre AT à envoyer au module
  *  @param  value La valeur de réponse attendue
  *  @param  mode Le mode de transmission (mode lecture ou écriture)
- *  @return <b>true</b> La réponse du module XBee est celle attendue
- *  @return <b>false</b> La réponse du module XBee n'est pas celle attendue
+ *  @return true La réponse du module XBee est celle attendue
+ *  @return false La réponse du module XBee n'est pas celle attendue
  */
 bool XBee::sendATCommand(const char *command, const char *value, unsigned int mode) {
     serial.writeString(command);
@@ -237,11 +237,11 @@ bool XBee::sendATCommand(const char *command, const char *value, unsigned int mo
 
 
 /*!
- *  @brief  <br>Lire la réponse à un envoi de commande AT
+ *  @brief  Lire la réponse à un envoi de commande AT
  *  @param  value La valeur attendue pour la commande envoyée
  *  @param  mode Le mode de lecture à utiliser
- *  @return <b>true</b> La réponse du module XBee est celle attendue
- *  @return <b>false</b> la réponse du module XBee n'est pas celle attendue
+ *  @return true La réponse du module XBee est celle attendue
+ *  @return false la réponse du module XBee n'est pas celle attendue
  */
 bool XBee::readATResponse(const char *value, int mode) {
     string response;
@@ -265,9 +265,9 @@ bool XBee::readATResponse(const char *value, int mode) {
 }
 
 /*!
- *  @brief  <br>Entrer dans le mode AT
- *  @return <b>true</b> Le module XBee est entré dans le mode AT
- *  @return <b>false</b> Le module XBee n'est pas entré dans le mode AT
+ *  @brief  Entrer dans le mode AT
+ *  @return true Le module XBee est entré dans le mode AT
+ *  @return false Le module XBee n'est pas entré dans le mode AT
  */
 bool XBee::enterATMode() {
     serial.writeString(XB_AT_CMD_ENTER);
@@ -279,9 +279,9 @@ bool XBee::enterATMode() {
 }
 
 /*!
- *  @brief  <br>Sortir du mode AT
- *  @return <b>true</b> Le module XBee est sorti du mode AT
- *  @return <b>false</b> Le module XBee n'est pas sorti du mode AT
+ *  @brief  Sortir du mode AT
+ *  @return true Le module XBee est sorti du mode AT
+ *  @return false Le module XBee n'est pas sorti du mode AT
  */
 bool XBee::exitATMode() {
     serial.writeString(XB_AT_CMD_EXIT);
@@ -292,9 +292,9 @@ bool XBee::exitATMode() {
 
 
 /*!
- *  @brief  <br>Ecrire les paramètres AT définis dans la mémoire flash du module XBee
- *  @return <b>true</b> La configuration a été écrite
- *  @return <b>false</b> La configuration n'a pas été écrite
+ *  @brief  Ecrire les paramètres AT définis dans la mémoire flash du module XBee
+ *  @return true La configuration a été écrite
+ *  @return false La configuration n'a pas été écrite
  */
 bool XBee::writeATConfig() {
     serial.writeString(XB_AT_CMD_WRITE_CONFIG);
@@ -307,7 +307,7 @@ bool XBee::writeATConfig() {
 // Envoi/Réception/Traitement des trames de messages
 
 /*!
- *  @brief <br>Attendre, vérifier et traiter une trame reçue
+ *  @brief Attendre, vérifier et traiter une trame reçue
  */
 [[noreturn]] void XBee::waitForATrame() {
     vector<int> response;
@@ -353,14 +353,14 @@ int XBee::processResponse(const vector<int> &response) {
 
 
 /*!
- *  @brief  <br>Découpe le résultat de la lecture du buffer en différentes trames
+ *  @brief  Découpe le résultat de la lecture du buffer en différentes trames
  *  @param  recv_msg Le résultat de la lecture du buffer
- *  @return <b>300</b> Succès
- *  @return <b>-203</b> La trame n'est pas adressé au module
- *  @return <b>-204</b> La vérification du CRC a échoué
- *  @return <b>-205</b> La longueur des données est incorrecte
- *  @return <b>-206</b> La séquence de début est incorrecte
- *  @return <b>-207</b> La longueur de données est incorrecte
+ *  @return 300 Succès
+ *  @return -203 La trame n'est pas adressé au module
+ *  @return -204 La vérification du CRC a échoué
+ *  @return -205 La longueur des données est incorrecte
+ *  @return -206 La séquence de début est incorrecte
+ *  @return -207 La longueur de données est incorrecte
  */
 int XBee::processSubFrame(vector<int> &recv_msg) {
     int data_len = recv_msg[5] - XB_V_SEQ_SHIFT;
@@ -402,10 +402,10 @@ int XBee::processSubFrame(vector<int> &recv_msg) {
 
 
 /*!
- *  @brief  <br>Traiter une trame reçue par le XBee
+ *  @brief  Traiter une trame reçue par le XBee
  *  @param  recv_frame La trame reçue par le XBee
- *  @return <b>200</b> Succès
- *  @return <b>-203</b> La trame n'est pas adressé au module
+ *  @return 200 Succès
+ *  @return -203 La trame n'est pas adressé au module
  */
 int XBee::processFrame(vector<int> recv_frame) {
     if (XB_ADR_CURRENT != recv_frame[2])
@@ -438,12 +438,12 @@ int XBee::processFrame(vector<int> recv_frame) {
 
 
 /*!
- *  @brief  <br>Interprète le code fonction issu d'une trame reçue
+ *  @brief  Interprète le code fonction issu d'une trame reçue
  *  @param  fct_code Le code fonction issu d'une trame reçue
  *  @param  exp L'adresse de l'expéditeur de la trame
- *  @return <b>100</b> Succès
- *  @return <b>-102</b> Code fonction inconnu
- *  @return <b>-103</b> Adresse inconnue
+ *  @return 100 Succès
+ *  @return -102 Code fonction inconnu
+ *  @return -103 Adresse inconnue
  */
 int XBee::processFctCode(int fct_code, int exp, const vector<int> &data) {
     char msg[1] = {XB_V_ACK};
@@ -484,12 +484,12 @@ int XBee::processFctCode(int fct_code, int exp, const vector<int> &data) {
 
 
 /*!
- *  @brief  <br>Envoyer une trame structurée via UART au XBee
+ *  @brief  Envoyer une trame structurée via UART au XBee
  *  @param  dest L'adresse du destinataire du message
  *  @param  fct_code Le code de la fonction concernée par le message
  *  @param  data Les valeurs des paramètres demandées par le code fonction
- *  @return <b>200</b> Succès
- *  @return <b>-205</b> La taille des données est trop grande
+ *  @return 200 Succès
+ *  @return -205 La taille des données est trop grande
  */
 int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const char *data, int data_len) {
     if (data_len > 255) {
@@ -538,7 +538,7 @@ int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const char *data, int data_l
 
 
 /*!
- *  @brief <br>Afficher les données découpées d'une structure de type frame_t
+ *  @brief Afficher les données découpées d'une structure de type frame_t
  */
 template<typename T>
 void XBee::printFrame(const T &frame, int data_len) {
@@ -561,7 +561,7 @@ void XBee::printFrame(const T &frame, int data_len) {
 
 
 /*!
- *  @brief  <br>Calculer le CRC16 Modbus de la frame XBee envoyée
+ *  @brief  Calculer le CRC16 Modbus de la frame XBee envoyée
  *  @param  frame La trame XBee sans le CRC et le caractère de fin de trame
  *  @param  frame_len La taille de la trame
  *  @return La valeur entière du CRC calculée sur 16 bits
@@ -589,13 +589,13 @@ int XBee::computeCRC(const int frame[], uint8_t frame_len) {
 
 
 /*!
- *  @brief  <br>Vérifier si le CRC reçu est cohérent avec la trame reçue
+ *  @brief  Vérifier si le CRC reçu est cohérent avec la trame reçue
  *  @param  crc_low Les bits de poids faible du CRC reçu
  *  @param  crc_high Les bits de poids forts du CRC reçu
  *  @param  frame La trame reçue (en enlevant le CRC et le caratère de fin de trame)
  *  @param  frame_len La taille de le trame telle qu'entrée dans la fonction
- *  @return <b>true</b> La valeur du CRC reçue est bien celle calculée à partir du reste de la trame
- *  @return <b>false</b> La valeur du CRC est incohérente ou non calculable
+ *  @return true La valeur du CRC reçue est bien celle calculée à partir du reste de la trame
+ *  @return false La valeur du CRC est incohérente ou non calculable
  */
 bool XBee::validateCRC(uint8_t crc_low, uint8_t crc_high, int frame[], int frame_len) {
     int crc = computeCRC(frame, frame_len);
@@ -608,13 +608,13 @@ bool XBee::validateCRC(uint8_t crc_low, uint8_t crc_high, int frame[], int frame
 
 
 /*!
- * @brief  <br>Lire le buffer Rx de la liaison série
+ * @brief  Lire le buffer Rx de la liaison série
  * @tparam T Le type du buffer dans lequel on veut stocker les données lues
  * @param  buffer Le buffer dans lequel on veut stocker les données lues
  */
 template<typename T>
 void XBee::readRx(T &buffer) {
-    char *reponse(nullptr);
+    char *reponse;
     reponse = new char;
 
     unsigned int timeout = 100;
@@ -626,12 +626,11 @@ void XBee::readRx(T &buffer) {
     }
 
     delete reponse;
-    reponse = nullptr;
 }
 
 
 /*!
- *  @brief <br>Retarder l'exécution du code
+ *  @brief Retarder l'exécution du code
  *  @param seconds Délai en secondes
  */
 void XBee::delay(float seconds) {

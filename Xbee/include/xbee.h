@@ -24,6 +24,10 @@
 #include "xbee_vars.h"
 
 
+/*!
+ * @typedef aruco_t
+ * @brief <br>Représente un tag ArUCO et ses coordonnées
+ */
 typedef struct {
     int id;
     double x;
@@ -83,8 +87,7 @@ private:
     int processFctCode(int fct_code, int exp, const std::vector<int> &data);
     int processFrame(std::vector<int> recv_frame);
 
-    template<typename T>
-    static void printFrame(const T &frame, int data_len);
+    template<typename T> static void printFrame(const T &frame, int data_len);
     static int computeCRC(const int frame[], uint8_t frame_len);
     static bool validateCRC(uint8_t crc_low, uint8_t crc_high, int frame[], int frame_len);
 
