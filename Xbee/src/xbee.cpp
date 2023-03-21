@@ -34,21 +34,24 @@ XBee::~XBee() = default;
  *  @return <b>-509</b> Parité non reconnue
  */
 int XBee::openSerialConnection() {
-    int errorOpening = serial.openDevice(XB_SERIAL_PORT_PRIMARY, XB_BAUDRATE_PRIMARY, XB_DATABITS_PRIMARY,
-                                     XB_PARITY_PRIMARY, XB_STOPBITS_PRIMARY);
+    int status = serial.openDevice(
+            XB_SERIAL_PORT_PRIMARY, XB_BAUDRATE_PRIMARY, XB_DATABITS_PRIMARY, XB_PARITY_PRIMARY, XB_STOPBITS_PRIMARY
+    );
 
-    if (errorOpening != XB_E_SER_SUCCESS)
-        logger << "(serial) /!\\ erreur " << errorOpening << " : impossible d'ouvrir le port "
-                << XB_SERIAL_PORT_PRIMARY << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parités : "
-                << XB_PARITY_PRIMARY << mendl;
-    else {
-        logger << "(serial) connexion ouverte avec succès sur le port " << XB_SERIAL_PORT_PRIMARY
-                << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parité : " << XB_PARITY_PRIMARY << mendl;
-
-        return checkATConfig();
+    if (status != XB_SER_E_SUCCESS) {
+        logger << "(serial) /!\\ erreur " << status << " : impossible d'ouvrir le port "
+               << XB_SERIAL_PORT_PRIMARY << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parités : "
+               << XB_PARITY_PRIMARY << mendl;
+        return status;
     }
 
-    return errorOpening;
+    logger << "(serial) connexion ouverte avec succès sur le port " << XB_SERIAL_PORT_PRIMARY
+            << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parité : " << XB_PARITY_PRIMARY << mendl;
+
+    if ((status = checkATConfig()) < 0)
+        return status;
+
+    return XB_SER_E_SUCCESS;
 }
 
 
@@ -88,9 +91,9 @@ int XBee::checkATConfig() {
     if (enterATMode())
         logger << "(config AT) entrée dans le mode AT" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_ENTER << " : impossible d'entrer dans le mode AT" << mendl;
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_ENTER << " : impossible d'entrer dans le mode AT" << mendl;
         closeSerialConnection();
-        return XB_E_AT_ENTER;
+        return XB_AT_E_ENTER;
     }
 
     if (sendATCommand(XB_AT_CMD_BAUDRATE, XB_AT_V_BAUDRATE, XB_AT_M_GET))
@@ -98,8 +101,8 @@ int XBee::checkATConfig() {
     else if (sendATCommand(XB_AT_CMD_BAUDRATE, XB_AT_V_BAUDRATE))
         logger << "(config AT) baudrate configuré avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_BAUDRATE << " : impossible de configurer le baudrate" << mendl;
-        return XB_E_AT_BAUDRATE;
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_BAUDRATE << " : impossible de configurer le baudrate" << mendl;
+        return XB_AT_E_BAUDRATE;
     }
 
     if (sendATCommand(XB_AT_CMD_PARITY, XB_AT_V_PARITY, XB_AT_M_GET))
@@ -107,9 +110,9 @@ int XBee::checkATConfig() {
     else if (sendATCommand(XB_AT_CMD_PARITY, XB_AT_V_PARITY))
         logger << "(config AT) nombre de bits de parité configuré avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_PARITY
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_PARITY
                << " : impossible d'écrire les paramètres dans la mémoire flash" << mendl;
-        return XB_E_AT_WRITE_CONFIG;
+        return XB_AT_E_WRITE_CONFIG;
     }
 
     if (sendATCommand(XB_AT_CMD_API, XB_AT_V_API, XB_AT_M_GET))
@@ -117,8 +120,8 @@ int XBee::checkATConfig() {
     else if (sendATCommand(XB_AT_CMD_API, XB_AT_V_API))
         logger << "(config AT) mode API configuré avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_API << " : impossible de configurer le mode API" << mendl;
-        return XB_E_AT_API;
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_API << " : impossible de configurer le mode API" << mendl;
+        return XB_AT_E_API;
     }
 
     if (sendATCommand(XB_AT_CMD_AES, XB_AT_V_AES, XB_AT_M_GET))
@@ -126,17 +129,17 @@ int XBee::checkATConfig() {
     else if (sendATCommand(XB_AT_CMD_AES, XB_AT_V_AES))
         logger << "(config AT) chiffrement AES configuré avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_AES
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_AES
                << " : impossible de configurer le paramètre de chiffrement AES" << mendl;
-        return XB_E_AT_AES;
+        return XB_AT_E_AES;
     }
 
     if (sendATCommand(XB_AT_CMD_AES_KEY, XB_AT_V_AES_KEY))
         logger << "(config AT) clé de chiffrement configurée avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_AES_KEY
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_AES_KEY
                << " : impossible de configurer la clé de chiffrement AES" << mendl;
-        return XB_E_AT_AES_KEY;
+        return XB_AT_E_AES_KEY;
     }
 
     if (sendATCommand(XB_AT_CMD_CHANEL, XB_AT_V_CHANEL, XB_AT_M_GET))
@@ -144,9 +147,9 @@ int XBee::checkATConfig() {
     else if (sendATCommand(XB_AT_CMD_CHANEL, XB_AT_V_CHANEL))
         logger << "(config AT) canal de découverte réseau configuré avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_CHANEL
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_CHANEL
                << " : impossible de configurer le canal de découverte réseau" << mendl;
-        return XB_E_AT_CHANEL;
+        return XB_AT_E_CHANEL;
     }
 
     if (sendATCommand(XB_AT_CMD_PAN_ID, XB_AT_V_PAN_ID, XB_AT_M_GET))
@@ -154,9 +157,9 @@ int XBee::checkATConfig() {
     else if (sendATCommand(XB_AT_CMD_PAN_ID, XB_AT_V_PAN_ID))
         logger << "(config AT) ID du réseau configuré avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_PAN_ID << " : impossible de configurer l'ID du réseau"
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_PAN_ID << " : impossible de configurer l'ID du réseau"
                << mendl;
-        return XB_E_AT_PAN_ID;
+        return XB_AT_E_PAN_ID;
     }
 
     if (sendATCommand(XB_AT_CMD_COORDINATOR, XB_AT_V_COORDINATOR, XB_AT_M_GET))
@@ -164,9 +167,9 @@ int XBee::checkATConfig() {
     else if (sendATCommand(XB_AT_CMD_COORDINATOR, XB_AT_V_COORDINATOR))
         logger << "(config AT) mode coordinateur configuré avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_COORDINATOR
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_COORDINATOR
                << " : impossible de configurer le mode coordinateur" << mendl;
-        return XB_E_AT_COORDINATOR;
+        return XB_AT_E_COORDINATOR;
     }
 
     if (sendATCommand(XB_AT_CMD_16BIT_SOURCE_ADDR, XB_AT_V_16BIT_SOURCE_ADDR, XB_AT_M_GET))
@@ -174,9 +177,9 @@ int XBee::checkATConfig() {
     else if (sendATCommand(XB_AT_CMD_16BIT_SOURCE_ADDR, XB_AT_V_16BIT_SOURCE_ADDR))
         logger << "(config AT) adresse source 16bits configurée avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_16BIT_SOURCE_ADDR
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_16BIT_SOURCE_ADDR
                << " : impossible de configurer l'adresse source 16bits" << mendl;
-        return XB_E_AT_16BIT_SOURCE_ADDR;
+        return XB_AT_E_16BIT_SOURCE_ADDR;
     }
 
     if (sendATCommand(XB_AT_CMD_LOW_DEST_ADDR, XB_AT_V_LOW_DEST_ADDR, XB_AT_M_GET))
@@ -184,9 +187,9 @@ int XBee::checkATConfig() {
     else if (sendATCommand(XB_AT_CMD_LOW_DEST_ADDR, XB_AT_V_LOW_DEST_ADDR))
         logger << "(config AT) adresse de destination configurée avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_LOW_DEST_ADDR
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_LOW_DEST_ADDR
                << " : impossible de configurer l'adresse de destination" << mendl;
-        return XB_E_AT_LOW_DEST_ADDR;
+        return XB_AT_E_LOW_DEST_ADDR;
     }
 
     if (sendATCommand(XB_AT_CMD_HIGH_DEST_ADDR, XB_AT_V_HIGH_DEST_ADDR, XB_AT_M_GET))
@@ -194,34 +197,34 @@ int XBee::checkATConfig() {
     else if (sendATCommand(XB_AT_CMD_HIGH_DEST_ADDR, XB_AT_V_HIGH_DEST_ADDR))
         logger << "(config AT) adresse de destination configurée avec succès" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_LOW_DEST_ADDR
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_LOW_DEST_ADDR
                << " : impossible de configurer l'adresse de destination" << mendl;
-        return XB_E_AT_LOW_DEST_ADDR;
+        return XB_AT_E_LOW_DEST_ADDR;
     }
 
     if (writeATConfig())
         logger << "(config AT) configuration AT enregistrée dans la mémoire du module" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_WRITE_CONFIG
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_WRITE_CONFIG
                << " : impossible d'écrire les paramètres dans la mémoire flash" << mendl;
-        return XB_E_AT_WRITE_CONFIG;
+        return XB_AT_E_WRITE_CONFIG;
     }
 
     if (discoverXbeeNetwork())
         logger << "(config AT) connexion XBee établie avec succès avec le module distant" << mendl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_DISCOVER_NETWORK
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_DISCOVER_NETWORK
                << " : impossible d'établir une connexion avec le module XBee distant" << mendl;
-        return XB_E_AT_DISCOVER_NETWORK;
+        return XB_AT_E_DISCOVER_NETWORK;
     }
 
     if (!exitATMode()) {
-        logger << "/!\\ (config AT) erreur " << XB_E_AT_EXIT << " : impossible de sortir du mode AT" << mendl;
-        return XB_E_AT_EXIT;
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_EXIT << " : impossible de sortir du mode AT" << mendl;
+        return XB_AT_E_EXIT;
     }
 
     logger << "(config AT) configuration AT réalisée avec succès" << mendl;
-    return XB_E_AT_SUCCESS;
+    return XB_AT_E_SUCCESS;
 }
 
 
@@ -234,17 +237,17 @@ int XBee::checkATConfig() {
  *  @return <b>false</b> La réponse du module XBee n'est pas celle attendue
  */
 bool XBee::sendATCommand(const char *command, const char *value, unsigned int mode) {
+    serial.writeString(command);
+
     if (mode == XB_AT_M_GET) {
-        serial.writeString(command);
         serial.writeString(XB_AT_V_END_LINE);
         logger << "(config AT) envoi de la commande AT : " << command << mendl;
         return readATResponse(value);
-    } else {
-        serial.writeString(command);
-        serial.writeString(value);
-        logger << "(config AT) envoi de la commande AT : " << command << "=" << value << mendl;
-        return readATResponse(XB_AT_R_SUCCESS);
     }
+
+    serial.writeString(value);
+    logger << "(config AT) envoi de la commande AT : " << command << "=" << value << mendl;
+    return readATResponse(XB_AT_R_SUCCESS);
 }
 
 
@@ -256,23 +259,24 @@ bool XBee::sendATCommand(const char *command, const char *value, unsigned int mo
  *  @return <b>false</b> la réponse du module XBee n'est pas celle attendue
  */
 bool XBee::readATResponse(const char *value, int mode) {
-    string reponse;
+    string response;
 
     if (strcmp(value, XB_AT_V_END_LINE) == 0) {
         delay(3);
-        reponse = readString();
+        readRx<string>(response);
         serial.flushReceiver();
-        logger << "(config AT) réponse du Xbee : " << mendl;
-        logger << reponse << mendl;
 
-        return !reponse.empty() && reponse != XB_AT_V_END_LINE;
+        logger << "(config AT) réponse du Xbee : " << mendl;
+        logger << response << mendl;
+
+        return !response.empty() && response != XB_AT_V_END_LINE;
     }
 
-    reponse = readString();
+    readRx<string>(response);
     serial.flushReceiver();
 
-    logger << "(config AT) Réponse du Xbee : " << reponse << mendl;
-    return mode == 0 && reponse == value;
+    logger << "(config AT) Réponse du Xbee : " << response << mendl;
+    return mode == 0 && response == value;
 }
 
 /*!
@@ -284,7 +288,7 @@ bool XBee::enterATMode() {
     serial.writeString(XB_AT_CMD_ENTER);
     logger << "(config AT) entrée en mode AT en cours..." << mendl;
 
-    delay(2);
+    delay(1.5);
     serial.writeString(XB_AT_V_END_LINE);
     return readATResponse(XB_AT_R_SUCCESS);
 }
@@ -325,35 +329,35 @@ bool XBee::discoverXbeeNetwork() {
     serial.writeString(XB_AT_V_END_LINE);
     logger << "(config AT) lancement de la découverte réseau XBee" << mendl;
 
-    delay(2);
-    string reponse = readString();
-    serial.flushReceiver();
+    delay(1.5);
+    string response;
+    readRx<string>(response);
 
-    return reponse[0] == XB_AT_V_DISCOVER_NETWORK[0];
+    serial.flushReceiver();
+    return response[0] == XB_AT_V_DISCOVER_NETWORK[0];
 }
 
 
 // Envoi/Réception/Traitement des trames de messages
 
-
 /*!
  *  @brief <br>Attendre, vérifier et traiter une trame reçue
  */
 [[noreturn]] void XBee::waitForATrame() {
-    vector<int> rep;
+    vector<int> response;
 
     if (XB_ADR_CURRENT == XB_ADR_ROBOT_01) {
         char msg[1] = {XB_V_ACK};
-        sendTrame(XB_ADR_CAMERA, XB_FCT_TEST_ALIVE, msg, 1);
+        sendFrame(XB_ADR_CAMERA, XB_FCT_TEST_ALIVE, msg, 1);
     }
 
     while (true) {
-        rep.clear();
+        response.clear();
         this_thread::sleep_for(chrono::milliseconds(10));
 
         if (serial.available() > 0) {
-            rep = readBuffer();
-            subTrame(rep);
+            readRx<vector<int>>(response);
+            subTrame(response);
         }
     }
 }
@@ -361,258 +365,188 @@ bool XBee::discoverXbeeNetwork() {
 
 /*!
  *  @brief  <br>Découpe le résultat de la lecture du buffer en différentes trames
- *  \param  msg_recu Le résultat de la lecture du buffer
- *  \return <b>300</b> Succès
- *  \return <b>-204</b> La vérification du CRC a échoué
+ *  @param  recv_msg Le résultat de la lecture du buffer
+ *  @return <b>300</b> Succès
+ *  @return <b>-204</b> La vérification du CRC a échoué
+ *  @return <b>-205</b> La longueur des données est incorrecte
+ *  @return <b>-206</b> La séquence de début est incorrecte
+ *  @return <b>-207</b> La longueur de données est incorrecte
  */
-int XBee:: subTrame(vector<int> msg_recu) {
-    int data_len = msg_recu[5];
-    int crc_low = msg_recu[7 + data_len];
-    int crc_high = msg_recu[8 + data_len];
-
-    int msg_decoupe[6 + data_len];
-    for (int i = 0; i < 6 + data_len; i++)
-        msg_decoupe[i] = msg_recu[i];
-
-    if (!isCRCCorrect(crc_low, crc_high, msg_decoupe, data_len + 6)) {
-        logger << "/!\\ (process trame) erreur " << XB_E_TRAME_CRC << " : CRC incorrect "
-               << mendl;
-        return XB_E_TRAME_CRC;
+int XBee::subTrame(vector<int> recv_msg) {
+    if (recv_msg[0] != XB_V_START) {
+        logger << "/!\\ (process trame) erreur " << XB_TRAME_E_START << " : Séquence de début incorrect " << mendl;
+        return XB_TRAME_E_START;
     }
 
-    processFrame(msg_recu);
+    // TODO : plusieurs trames dans le buffer
+    recv_msg[5] -= XB_V_SEQ_SHIFT;
+    recv_msg[6] -= XB_V_SEQ_SHIFT;
+    recv_msg[7] -= XB_V_SEQ_SHIFT;
+
+    int data_len = recv_msg[5];
+
+    if (data_len > 255) {
+        logger << "/!\\ (process trame) erreur " << XB_TRAME_E_DATALEN << " : Longueur de données incorrecte " << mendl;
+        return XB_TRAME_E_DATALEN;
+    }
+
+    if (recv_msg[9 + data_len] != XB_V_END) {
+        logger << "/!\\ (process trame) erreur " << XB_TRAME_E_END << " : Séquence de fin incorrecte " << mendl;
+        return XB_TRAME_E_END;
+    }
+
+    int msg_slice[6 + data_len];
+    for (int i = 0; i < 6 + data_len; i++)
+        msg_slice[i] = recv_msg[i];
+
+    if (!isCRCCorrect(recv_msg[7 + data_len], recv_msg[8 + data_len], msg_slice, data_len + 6)) {
+        logger << "/!\\ (process trame) erreur " << XB_TRAME_E_CRC << " : CRC incorrect "
+               << mendl;
+        return XB_TRAME_E_CRC;
+    }
+
     logger << "(découpe trame) découpage des trames effectué avec succès" << mendl;
-    return XB_E_SUB_TRAME_SUCCESS;
+
+    processFrame(recv_msg);
+    return XB_SUBTRAME_E_SUCCESS;
 }
 
 
 /*!
  *  @brief  <br>Traiter une trame reçue par le XBee
- *  @param  trame_recue La trame reçue par le XBee
+ *  @param  recv_frame La trame reçue par le XBee
  *  @return <b>200</b> Succès
  */
-int XBee::processFrame(vector<int> trame_recue) {
-    frame_t trame = {
-            .start_seq = trame_recue[0],
-            .adr_emetteur = trame_recue[1],
-            .adr_dest = trame_recue[2],
-            .id_trame_low = trame_recue[3],
-            .id_trame_high = trame_recue[4],
-            .nb_octets_msg = trame_recue[5],
-            .code_fct = trame_recue[6],
+int XBee::processFrame(vector<int> recv_frame) {
+    frame_t frame = {
+            .start_seq = recv_frame[0],
+            .adr_emetteur = recv_frame[1],
+            .adr_dest = recv_frame[2],
+            .id_trame_low = recv_frame[3],
+            .id_trame_high = recv_frame[4],
+            .nb_octets_msg = recv_frame[5],
+            .code_fct = recv_frame[6],
             .param = vector<int>{},
-            .crc_low = trame_recue[7 + trame_recue[5]],
-            .crc_high = trame_recue[8 + trame_recue[5]],
-            .end_seq = trame_recue[9 + trame_recue[5]]
+            .crc_low = recv_frame[7 + recv_frame[5]],
+            .crc_high = recv_frame[8 + recv_frame[5]],
+            .end_seq = recv_frame[9 + recv_frame[5]]
     };
 
-    for (int i = 0; i < trame.nb_octets_msg; i++)
-        trame.param.push_back(trame_recue[7 + i]);
+    for (int i = 0; i < frame.nb_octets_msg; i++)
+        frame.param.push_back(recv_frame[7 + i]);
 
-    afficherTrameRecue(trame);
-    processCodeFct(trame.code_fct, trame.adr_emetteur, trame.crc_low, trame.param);
+    printFrame(frame);
+    processFctCode(frame.code_fct, frame.adr_emetteur, frame.param);
 
-    logger << "(process trame) trame n°" << trame.id_trame_high + trame.id_trame_low << "a été traitée avec succès "
-           << mendl;
+    logger << "(process frame) frame n°" << frame.id_trame_high + frame.id_trame_low
+                                         << "a été traitée avec succès " << mendl;
 
-    return XB_E_TRAME_SUCCESS;
+    return XB_TRAME_E_SUCCESS;
 }
+
 
 /*!
  *  @brief  <br>Interprète le code fonction issu d'une trame reçue
- *  @param  code_fct Le code fonction issu d'une trame reçue
+ *  @param  fct_code Le code fonction issu d'une trame reçue
  *  @param  exp L'adresse de l'expéditeur de la trame
  *  @return <b>100</b> Succès
- *  @return <b>-102</b> Code fonction existant mais non implémenté
+ *  @return <b>-102</b> Code fonction inconnu
+ *  @return <b>-103</b> Adresse inconnue
  */
-int XBee::processCodeFct(int code_fct, int exp, int id_trame, vector<int> param) {
+int XBee::processFctCode(int fct_code, int exp, vector<int> data) {
     char msg[1] = {XB_V_ACK};
 
-    switch (code_fct) {
-        case XB_FCT_TEST_ALIVE:
-            sendTrame(exp, XB_FCT_TEST_ALIVE, msg, 1);
-            break;
-        case XB_FCT_ARUCO_POS:
-            for (int i = 0; i < param.size()/4; i++) {
-                aruco_tags[i] = {
-                        param[4*i],
-                        (double) param[4*i+1],
-                        (double) param[4*i+2],
-                        (double) param[4*i+3]
-                };
-            }
-            break;
-        default :
-            logger << "/!\\ (process code fonction) erreur " << XB_E_FCT_NONE_REACHABLE
-                   << " : code fonction existant mais ne déclenchant aucune action  " << mendl;
-            return XB_E_FCT_NONE_REACHABLE;
+    switch (exp) {
+        case XB_ADR_CAMERA:
+        case XB_ADR_ROBOT_01:
+        case XB_ADR_ROBOT_02:
+        break;
+        default:
+            logger << "/!\\ (process code fonction) erreur " << XB_ADR_E_UNKNOWN << " : adresse inconnue" << mendl;
+            return XB_ADR_E_UNKNOWN;
     }
 
-    logger << "(process code fonction) code fonction n°" << code_fct << " traité avec succès" << mendl;
+    switch (fct_code) {
+        case XB_FCT_TEST_ALIVE:
+            sendFrame(exp, XB_FCT_TEST_ALIVE, msg, 1);
+        break;
+        case XB_FCT_ARUCO_POS:
+            for (int i = 0; i < data.size() / 4; i++) {
+                aruco_tags[i] = {
+                        data[4 * i],
+                        (double) data[4 * i + 1],
+                        (double) data[4 * i + 2],
+                        (double) data[4 * i + 3]
+                };
+            }
+        break;
+        default :
+            logger << "/!\\ (process code fonction) erreur " << XB_FCT_E_UNKNOWN << " : code fonction inconnu" << mendl;
+            return XB_FCT_E_UNKNOWN;
+    }
 
-    return XB_E_FCT_SUCCESS;
+    logger << "(process code fonction) code fonction n°" << fct_code << " traité avec succès" << mendl;
+    return XB_FCT_E_SUCCESS;
 }
 
 
 /*!
  *  @brief  <br>Envoyer une trame structurée via UART au XBee
- *  @param  ad_dest L'adresse du destinataire du message
- *  @param  code_fct Le code de la fonction concernée par le message
+ *  @param  dest L'adresse du destinataire du message
+ *  @param  fct_code Le code de la fonction concernée par le message
  *  @param  data Les valeurs des paramètres demandées par le code fonction
- *  @return <b>XB_E_TRAME_SUCCESS</b> Succès
+ *  @return <b>XB_TRAME_E_SUCCESS</b> Succès
+ *  @return <b>XB_TRAME_E_DATALEN</b> La taille des données est trop grande
  */
-int XBee::sendTrame(uint8_t ad_dest, uint8_t code_fct, const char *data, int data_len) {
-    uint8_t length_trame = data_len + 10;
-    uint8_t trame[length_trame];
-    int trame_int[length_trame];
-    int id_trame = ++nb_trame;
-    uint8_t id_trame_low = id_trame & 0xFF;
-    uint8_t id_trame_high = (id_trame >> 8) & 0xFF;
+int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const char *data, int data_len) {
+    if (data_len > 255) {
+        logger << "/!\\ (send frame) erreur " << XB_TRAME_E_DATALEN << " : taille des données trop grande" << mendl;
+        return XB_TRAME_E_DATALEN;
+    }
 
-    trame[0] = XB_V_START;
-    trame[1] = XB_ADR_CURRENT;
-    trame[2] = ad_dest;
-    trame[3] = id_trame_low;
-    trame[4] = id_trame_high;
-    trame[5] = data_len;
-    trame[6] = code_fct;
+    int frame_id = ++nb_trame;
+    uint8_t frame_len = data_len + 10;
+
+    uint8_t frame[frame_len];
+    int frame_int[frame_len];
+
+    uint8_t frame_id_low = frame_id & 0xFF;
+    uint8_t frame_id_high = (frame_id >> 8) & 0xFF;
+
+    frame[0] = XB_V_START;
+    frame[1] = XB_ADR_CURRENT;
+    frame[2] = dest;
+    frame[3] = frame_id_low + XB_V_SEQ_SHIFT;
+    frame[4] = frame_id_high + XB_V_SEQ_SHIFT;
+    frame[5] = data_len + XB_V_SEQ_SHIFT;
+    frame[6] = fct_code;
 
     for (size_t i = 0; i < data_len; i++)
-        trame[i + 7] = data[i];
+        frame[i + 7] = data[i];
 
-    for (int i = 0; i < length_trame; i++)
-        trame_int[i] = int(trame[i]);
+    for (int i = 0; i < frame_len; i++)
+        frame_int[i] = int(frame[i]);
 
-    int crc = crc16(trame_int, data_len + 6);
+    int crc = computeCRC(frame_int, data_len + 6);
     uint8_t crc_low = crc & 0xFF;
     uint8_t crc_high = (crc >> 8) & 0xFF;
 
-    trame[data_len + 7] = crc_low;
-    trame[data_len + 8] = crc_high;
-    trame[data_len + 9] = XB_V_END;
+    frame[data_len + 7] = crc_low;
+    frame[data_len + 8] = crc_high;
+    frame[data_len + 9] = XB_V_END;
 
-    serial.writeBytes(trame, length_trame);
-    logger << "(sendTrame) envoi de la trame n°" << dec << id_trame_low + id_trame_high << " effectué avec succès"
-            << mendl;
+    serial.writeBytes(frame, frame_len);
+    logger << "(sendFrame) envoi de la frame n°" << dec << frame_id_low + frame_id_high
+                                                 << " effectué avec succès" << mendl;
 
-    return XB_E_TRAME_SUCCESS;
-}
-
-
-/*!
- *  @brief  <br>Calculer le CRC16 Modbus de la trame XBee envoyée
- *  @param  trame La trame XBee sans le CRC et le caractère de fin de trame
- *  @param  taille La taille de la trame
- *  @return La valeur entière du CRC calculée sur 16 bits
- */
-int XBee::crc16(const int trame[], uint8_t taille) {
-    int crc = 0xFFFF, count = 0;
-    int octet_a_traiter;
-    const int POLYNOME = 0xA001;
-
-    octet_a_traiter = trame[0];
-
-    do {
-        crc ^= octet_a_traiter;
-
-        for (uint8_t i = 0; i < 8; i++) {
-
-            if ((crc % 2) != 0)
-                crc = (crc >> 1) ^ POLYNOME;
-
-            else
-                crc = (crc >> 1);
-
-        }
-
-        count++;
-        octet_a_traiter = trame[count];
-    } while (count < taille);
-
-    return crc;
-}
-
-
-/*!
- *  @brief  <br>Vérifier si le CRC reçu est cohérent avec la trame reçue
- *  @param  crc_low Les bits de poids faible du CRC reçu
- *  @param  crc_high Les bits de poids forts du CRC reçu
- *  @param  trame La trame reçue (en enlevant le CRC et le caratère de fin de trame)
- *  @param  trame_size La taille de le trame telle qu'entrée dans la fonction
- *  @return <b>true</b> La valeur du CRC reçue est bien celle calculée à partir du reste de la trame
- *  @return <b>false</b> La valeur du CRC est incohérente ou non calculable
- */
-bool XBee::isCRCCorrect(uint8_t crc_low, uint8_t crc_high, int trame[], int trame_size) {
-    int crc = crc16(trame, trame_size);
-
-    uint8_t newcrc_low = crc & 0xFF;
-    uint8_t newcrc_high = (crc >> 8) & 0xFF;
-
-    return (newcrc_low == crc_low) && (newcrc_high == crc_high);
-}
-
-
-/*!
- *  @brief  <br>Lire l'intégralité du buffer Rx de la RaspberryPi
- *  @return <b>rep</b> La valeur du buffer sous forme d'un vecteur d'entiers signés sur 32 bits
- */
-vector<int> XBee::readBuffer() {
-    char *reponse(nullptr);
-    reponse = new char;
-
-    vector<int> rep;
-    unsigned int timeout = 100;
-    delay(1);
-
-    while (serial.available() > 0) {
-        serial.readChar(reponse, timeout);
-        rep.push_back(*reponse);
-    }
-
-    delete reponse;
-    reponse = nullptr;
-
-    return rep;
-}
-
-
-/*!
- *  @brief <br>Retarder l'exécution du code
- *  @param time Délai en secondes
- */
-void XBee::delay(unsigned int time) {
-    this_thread::sleep_for(chrono::milliseconds(time * 1000));
-}
-
-
-/*!
- *   @brief  <br>Renvoyer la valeur du buffer Rx de la RaspberryPi sous forme d'objet string
- *   @return <b>rep</b> La valeur du buffer concaténée sous forme d'objet string
- */
-string XBee::readString() {
-    char *reponse(nullptr);
-    reponse = new char;
-
-    string rep;
-    unsigned int timeout = 100;
-    delay(1);
-
-    while (serial.available() > 0) {
-        serial.readChar(reponse, timeout);
-        rep += *reponse;
-    }
-
-    delete reponse;
-    reponse = nullptr;
-
-    return rep;
+    return XB_TRAME_E_SUCCESS;
 }
 
 
 /*!
  *  @brief <br>Afficher les données découpées d'une structure de type frame_t
  */
-void XBee::afficherTrameRecue(const frame_t &trame) {
+void XBee::printFrame(const frame_t &trame) {
     cout << hex << showbase;
     cout << "\t-> Start seq : " << trame.start_seq << endl;
     cout << "\t-> Emetteur : " << trame.adr_emetteur << endl;
@@ -627,4 +561,83 @@ void XBee::afficherTrameRecue(const frame_t &trame) {
 
     cout << "\t-> CRC : " << trame.crc_low << " " << trame.crc_high << endl;
     cout << "\t-> End seq : " << trame.end_seq << endl;
+}
+
+
+/*!
+ *  @brief  <br>Calculer le CRC16 Modbus de la frame XBee envoyée
+ *  @param  frame La trame XBee sans le CRC et le caractère de fin de trame
+ *  @param  frame_len La taille de la trame
+ *  @return La valeur entière du CRC calculée sur 16 bits
+ */
+int XBee::computeCRC(const int frame[], uint8_t frame_len) {
+    int crc = 0xFFFF, count = 0;
+    int cur_byte = frame[0];
+    const int POLYNOME = 0xA001;
+
+    do {
+        crc ^= cur_byte;
+
+        for (uint8_t i = 0; i < 8; i++)
+            if ((crc % 2) != 0)
+                crc = (crc >> 1) ^ POLYNOME;
+            else
+                crc = (crc >> 1);
+
+        count++;
+        cur_byte = frame[count];
+    } while (count < frame_len);
+
+    return crc;
+}
+
+
+/*!
+ *  @brief  <br>Vérifier si le CRC reçu est cohérent avec la trame reçue
+ *  @param  crc_low Les bits de poids faible du CRC reçu
+ *  @param  crc_high Les bits de poids forts du CRC reçu
+ *  @param  frame La trame reçue (en enlevant le CRC et le caratère de fin de trame)
+ *  @param  frame_len La taille de le trame telle qu'entrée dans la fonction
+ *  @return <b>true</b> La valeur du CRC reçue est bien celle calculée à partir du reste de la trame
+ *  @return <b>false</b> La valeur du CRC est incohérente ou non calculable
+ */
+bool XBee::isCRCCorrect(uint8_t crc_low, uint8_t crc_high, int frame[], int frame_len) {
+    int crc = computeCRC(frame, frame_len);
+
+    uint8_t newcrc_low = crc & 0xFF;
+    uint8_t newcrc_high = (crc >> 8) & 0xFF;
+
+    return (newcrc_low == crc_low) && (newcrc_high == crc_high);
+}
+
+
+/*!
+ * @brief  <br>Lire le buffer Rx de la liaison série
+ * @tparam T Le type du buffer dans lequel on veut stocker les données lues
+ * @param  buffer Le buffer dans lequel on veut stocker les données lues
+ */
+template<typename T>
+void XBee::readRx(T &buffer) {
+    char *reponse(nullptr);
+    reponse = new char;
+
+    unsigned int timeout = 100;
+    delay(1);
+
+    while (serial.available() > 0) {
+        serial.readChar(reponse, timeout);
+        buffer.push_back(*reponse);
+    }
+
+    delete reponse;
+    reponse = nullptr;
+}
+
+
+/*!
+ *  @brief <br>Retarder l'exécution du code
+ *  @param seconds Délai en secondes
+ */
+void XBee::delay(float seconds) {
+    this_thread::sleep_for(chrono::milliseconds((int) seconds * 1000));
 }

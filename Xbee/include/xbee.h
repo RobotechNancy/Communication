@@ -67,7 +67,7 @@ public:
     bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
     bool writeATConfig();
 
-    int sendTrame(uint8_t ad_dest, uint8_t code_fct, const char *data = nullptr, int data_len = 1);
+    int sendFrame(uint8_t dest, uint8_t fct_code, const char *data = nullptr, int data_len = 1);
     [[noreturn]] void waitForATrame();
 private:
     serialib serial;
@@ -80,17 +80,16 @@ private:
     bool exitATMode();
     bool discoverXbeeNetwork();
 
-    int subTrame(std::vector<int> msg_recu);
-    int processCodeFct(int code_fct, int exp, int id_trame, std::vector<int> param);
-    int processFrame(std::vector<int> trame_recue);
-    static void afficherTrameRecue(const frame_t &trame);
+    int subTrame(std::vector<int> recv_msg);
+    int processFctCode(int fct_code, int exp, std::vector<int> data);
+    int processFrame(std::vector<int> recv_frame);
+    static void printFrame(const frame_t &trame);
 
-    static int crc16(const int trame[], uint8_t taille);
-    static bool isCRCCorrect(uint8_t crc_low, uint8_t crc_high, int trame[], int trame_size);
+    static int computeCRC(const int frame[], uint8_t frame_len);
+    static bool isCRCCorrect(uint8_t crc_low, uint8_t crc_high, int frame[], int frame_len);
 
-    std::string readString();
-    std::vector<int> readBuffer();
-    static void delay(unsigned int time);
+    template<typename T> void readRx(T &buffer);
+    static void delay(float seconds);
 };
 
 #endif // XBEE_H

@@ -10,11 +10,12 @@
 #include "include/xbee.h"
 using namespace std;
 
+
 int main() {
     XBee xbee;
     int status;
 
-    if ((status = xbee.openSerialConnection()) != XB_E_AT_SUCCESS) {
+    if ((status = xbee.openSerialConnection()) != XB_AT_E_SUCCESS) {
         cout << "Error while opening serial connection" << endl;
         return status;
     }

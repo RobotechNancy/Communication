@@ -30,6 +30,7 @@
 #define XB_V_START 0x02
 #define XB_V_END 0x03
 #define XB_V_ACK 0x06
+#define XB_V_SEQ_SHIFT 4
 
 #define XB_FCT_TEST_ALIVE 0x07
 #define XB_FCT_ARUCO_POS  0x08
@@ -38,40 +39,44 @@
 // Code d'erreurs
 #define XB_E_SUCCESS 000
 
-#define XB_E_FCT_SUCCESS 100
-#define XB_E_FCT_NONE_REACHABLE (-102)
+#define XB_FCT_E_SUCCESS 100
+#define XB_FCT_E_UNKNOWN (-102)
+#define XB_ADR_E_UNKNOWN (-103)
 
-#define XB_E_TRAME_SUCCESS 200
-#define XB_E_TRAME_CRC (-204)
+#define XB_TRAME_E_SUCCESS 200
+#define XB_TRAME_E_CRC (-204)
+#define XB_TRAME_E_DATALEN (-205)
+#define XB_TRAME_E_START (-206)
+#define XB_TRAME_E_END (-207)
 
-#define XB_E_SUB_TRAME_SUCCESS 300
+#define XB_SUBTRAME_E_SUCCESS 300
 
-#define XB_E_AT_SUCCESS 400
-#define XB_E_AT_ENTER (-401)
-#define XB_E_AT_API (-402)
-#define XB_E_AT_BAUDRATE (-403)
-#define XB_E_AT_AES (-404)
-#define XB_E_AT_AES_KEY (-405)
-#define XB_E_AT_CHANEL (-406)
-#define XB_E_AT_PAN_ID (-407)
-#define XB_E_AT_COORDINATOR (-408)
-#define XB_E_AT_PARITY (-409)
-#define XB_E_AT_16BIT_SOURCE_ADDR (-410)
-#define XB_E_AT_LOW_DEST_ADDR (-411)
-#define XB_E_AT_EXIT (-412)
-#define XB_E_AT_WRITE_CONFIG (-413)
-#define XB_E_AT_DISCOVER_NETWORK (-414)
+#define XB_AT_E_SUCCESS 400
+#define XB_AT_E_ENTER (-401)
+#define XB_AT_E_API (-402)
+#define XB_AT_E_BAUDRATE (-403)
+#define XB_AT_E_AES (-404)
+#define XB_AT_E_AES_KEY (-405)
+#define XB_AT_E_CHANEL (-406)
+#define XB_AT_E_PAN_ID (-407)
+#define XB_AT_E_COORDINATOR (-408)
+#define XB_AT_E_PARITY (-409)
+#define XB_AT_E_16BIT_SOURCE_ADDR (-410)
+#define XB_AT_E_LOW_DEST_ADDR (-411)
+#define XB_AT_E_EXIT (-412)
+#define XB_AT_E_WRITE_CONFIG (-413)
+#define XB_AT_E_DISCOVER_NETWORK (-414)
 
-#define XB_E_SER_SUCCESS 500
-#define XB_E_SER_NOT_FOUND (-501)
-#define XB_E_SER_OPEN (-502)
-#define XB_E_SER_PARAM (-503)
-#define XB_E_SER_UKN_BAUDRATE (-504)
-#define XB_E_SER_CONFIG (-505)
-#define XB_E_SER_TIMOUT (-506)
-#define XB_E_SER_UKN_DATABITS (-507)
-#define XB_E_SER_UKN_STOPBITS (-508)
-#define XB_E_SER_UKN_PARITY (-509)
+#define XB_SER_E_SUCCESS 500
+#define XB_SER_E_NOT_FOUND (-501)
+#define XB_SER_E_OPEN (-502)
+#define XB_SER_E_PARAM (-503)
+#define XB_SER_E_UKN_BAUDRATE (-504)
+#define XB_SER_E_CONFIG (-505)
+#define XB_SER_E_TIMOUT (-506)
+#define XB_SER_E_UKN_DATABITS (-507)
+#define XB_SER_E_UKN_STOPBITS (-508)
+#define XB_SER_E_UKN_PARITY (-509)
 
 
 // Commandes et valeurs AT
