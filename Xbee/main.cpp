@@ -15,8 +15,8 @@ int main() {
     XBee xbee;
     int status;
 
-    if ((status = xbee.openSerialConnection()) != XB_AT_E_SUCCESS) {
-        cout << "Error while opening serial connection" << endl;
+    if ((status = xbee.openSerialConnection()) != XB_SER_E_SUCCESS) {
+        cout << "Error while opening serial connection : " << status << endl;
         return status;
     }
 

@@ -132,6 +132,7 @@
 // Réponses AT
 #define XB_AT_R_EMPTY ""
 #define XB_AT_R_SUCCESS "OK\r"
+#define XB_AT_R_SUCCESS_2 "\rOK\r"
 
 // Mode AT
 #define XB_AT_M_GET 1

@@ -288,7 +288,7 @@ bool XBee::enterATMode() {
     serial.writeString(XB_AT_CMD_ENTER);
     logger << "(config AT) entrée en mode AT en cours..." << mendl;
 
-    delay(1.5);
+    delay(2);
     serial.writeString(XB_AT_V_END_LINE);
     return readATResponse(XB_AT_R_SUCCESS);
 }
@@ -329,7 +329,7 @@ bool XBee::discoverXbeeNetwork() {
     serial.writeString(XB_AT_V_END_LINE);
     logger << "(config AT) lancement de la découverte réseau XBee" << mendl;
 
-    delay(1.5);
+    delay(2);
     string response;
     readRx<string>(response);
 
@@ -379,11 +379,7 @@ int XBee::subTrame(vector<int> recv_msg) {
     }
 
     // TODO : plusieurs trames dans le buffer
-    recv_msg[5] -= XB_V_SEQ_SHIFT;
-    recv_msg[6] -= XB_V_SEQ_SHIFT;
-    recv_msg[7] -= XB_V_SEQ_SHIFT;
-
-    int data_len = recv_msg[5];
+    int data_len = recv_msg[5] - XB_V_SEQ_SHIFT;
 
     if (data_len > 255) {
         logger << "/!\\ (process trame) erreur " << XB_TRAME_E_DATALEN << " : Longueur de données incorrecte " << mendl;
@@ -405,6 +401,9 @@ int XBee::subTrame(vector<int> recv_msg) {
         return XB_TRAME_E_CRC;
     }
 
+    recv_msg[3] -= XB_V_SEQ_SHIFT;
+    recv_msg[4] -= XB_V_SEQ_SHIFT;
+    recv_msg[5] -= XB_V_SEQ_SHIFT;
     logger << "(découpe trame) découpage des trames effectué avec succès" << mendl;
 
     processFrame(recv_msg);
@@ -439,7 +438,7 @@ int XBee::processFrame(vector<int> recv_frame) {
     processFctCode(frame.code_fct, frame.adr_emetteur, frame.param);
 
     logger << "(process frame) frame n°" << frame.id_trame_high + frame.id_trame_low
-                                         << "a été traitée avec succès " << mendl;
+                                         << " a été traitée avec succès " << mendl;
 
     return XB_TRAME_E_SUCCESS;
 }

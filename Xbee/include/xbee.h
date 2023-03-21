@@ -83,8 +83,8 @@ private:
     int subTrame(std::vector<int> recv_msg);
     int processFctCode(int fct_code, int exp, std::vector<int> data);
     int processFrame(std::vector<int> recv_frame);
-    static void printFrame(const frame_t &trame);
 
+    static void printFrame(const frame_t &trame);
     static int computeCRC(const int frame[], uint8_t frame_len);
     static bool isCRCCorrect(uint8_t crc_low, uint8_t crc_high, int frame[], int frame_len);
 
