@@ -1,5 +1,5 @@
 set(CMAKE_CXX_STANDARD 20)
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.16)
 project(Xbee VERSION 0.1 DESCRIPTION "Communication Xbee pour raspberry pi")
 
 add_library(${PROJECT_NAME}

@@ -1,5 +1,5 @@
-set(CMAKE_CXX_STANDARD 23)
-cmake_minimum_required(VERSION 3.24)
+set(CMAKE_CXX_STANDARD 20)
+cmake_minimum_required(VERSION 3.16)
 project(CAN VERSION 0.1 DESCRIPTION "Communication CAN pour raspberry pi")
 
 add_library(${PROJECT_NAME} include/can_vars.h src/can.cpp include/can.h)
@@ -18,10 +18,11 @@ install(TARGETS ${PROJECT_NAME}
 configure_file(${PROJECT_NAME}.pc.in ${PROJECT_NAME}.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 
+find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LOGS REQUIRED Logs)
 include_directories(${PROJECT_NAME}_test ${LOGS_INCLUDE_DIR})
 
 add_executable(${PROJECT_NAME}_test src/main.cpp include/can_vars.h src/can.cpp include/can.h)
-target_link_libraries(${PROJECT_NAME}_test ${LOGS_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}_test ${LOGS_LIBRARIES} Threads::Threads)
 target_compile_options(${PROJECT_NAME}_test PRIVATE ${LOGS_CFLAGS_OTHER})

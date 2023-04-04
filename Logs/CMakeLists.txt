@@ -1,5 +1,5 @@
-set(CMAKE_CXX_STANDARD 23)
-cmake_minimum_required(VERSION 3.24)
+set(CMAKE_CXX_STANDARD 20)
+cmake_minimum_required(VERSION 3.16)
 project(Logs VERSION 0.1 DESCRIPTION "Librairie de logs")
 
 add_library(${PROJECT_NAME} src/logs.cpp)
