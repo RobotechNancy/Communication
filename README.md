@@ -1,6 +1,6 @@
-# Librairies communes
+# Librairies de communication
 
-Ce repo contient toutes les librairies custom utilisées pour le robot :
+Ce repo contient les librairies réutilisables dans les projets de l'équipe :
 - `CAN` : librairie C++ pour communiquer avec le bus CAN
 - `Logs` : librairie C++ pour gérer les logs
 - `Xbee` : librairie C++ pour communiquer avec le module Xbee
