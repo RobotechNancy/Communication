@@ -54,7 +54,7 @@ void configure_CAN(CAN_HandleTypeDef hcan, CAN_EMIT_ADDR addr) {
 
 	sFilterConfig.FilterMode =           CAN_FILTERMODE_IDMASK; // Filtrage par liste ou par masque
 	sFilterConfig.FilterScale =          CAN_FILTERSCALE_16BIT; // Filtre de 32 bits ou 1 de 16 bits
-	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;   <       // 3 files avec 3 filtres par file
+	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;          // 3 files avec 3 filtres par file
 	sFilterConfig.SlaveStartFilterBank = 14;                    // Choix du filtre dans la banque
 	sFilterConfig.FilterActivation =     ENABLE;
 	sFilterConfig.FilterMaskIdLow =      0b111100000000000;     // Masque LSBs
