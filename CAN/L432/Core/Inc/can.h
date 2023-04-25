@@ -11,20 +11,18 @@
 #define INC_CAN_H_
 
 #include <stdbool.h>
-#include "can_vars.h"
-#include "stm32l4xx_hal.h"
 
-typedef unsigned int uint;
+#include "stm32l4xx_hal.h"
+#include "robotech/can_vars.h"
+
 
 typedef struct {
 	unsigned char *data;
 	char len;
 } graph_state_t;
 
-
-can_mess_t process_frame(CAN_RxHeaderTypeDef frame, uint8_t data[]);
 void configure_CAN(CAN_HandleTypeDef hcan, CAN_EMIT_ADDR adresse);
-int send(CAN_ADDR addr, CAN_FCT_CODE fct_code , uint8_t data[], uint data_len, bool is_rep, uint rep_len, uint msg_id);
-int start_listen();
+can_mess_t process_frame(CAN_RxHeaderTypeDef frame, uint8_t data[]);
+int send(CAN_ADDR addr, CAN_FCT_CODE fct_code , uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id);
 
 #endif /* INC_CAN_H_ */

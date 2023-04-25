@@ -27,7 +27,7 @@
 
 #define CAN_MAX_VALUE_ADDR        16
 #define CAN_MAX_VALUE_CODE_FCT    128
-#define CAN_MAX_VALUE_REP_NBR
+#define CAN_MAX_VALUE_REP_NBR     8
 
 
 /*!
@@ -62,7 +62,7 @@ typedef enum {
 
 /*!
  * @enum    CAN_FCT_CODE
- * @brief   \n Codes fonction
+ * @brief   Codes fonction
  * @example FCT_AVANCE = 0x010000
  * @details 0x??000 ou bits 12 à 19
  */

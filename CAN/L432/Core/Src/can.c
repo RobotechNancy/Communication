@@ -5,7 +5,6 @@
  * @author 		   : Theo RUSINOWITCH <teo.rusi@hotmail.fr>
  ******************************************************************************
  */
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -13,30 +12,7 @@
 
 extern CAN_HandleTypeDef hcan1;
 extern CAN_HandleTypeDef hcan_p;
-extern uint8_t CanAdresse;
 extern graph_state_t state;
-
-
-bool is_valid_addr(CAN_ADDR addr) {
-	int size = sizeof(ADDR_LIST) / sizeof(ADDR_LIST[0]);
-
-	for (int i = 0; i < size; i++)
-		if (ADDR_LIST[i] == addr)
-			return true;
-
-	return false;
-}
-
-
-bool is_valid_fct_code(CAN_FCT_CODE fct_code) {
-	int size = sizeof(FCT_CODE_LIST) / sizeof(FCT_CODE_LIST[0]);
-
-	for (int i = 0; i < size; i++)
-		if (ADDR_LIST[i] == fct_code)
-			return true;
-
-	return false;
-}
 
 
 /*!
@@ -63,9 +39,9 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 		state.len = msg.data_len;
 		memcpy(state.data, msg.data, msg.data_len);
 		send(CAN_ADDR_RASPBERRY, FCT_CHANGEMENT_ETAT, msg.data, msg.data_len, false, 0, msg.message_id);
-	case FCT_TEST_COMM:
+	case FCT_ACCUSER_RECPETION:
 		data[0] = 0;
-		send(CAN_ADDR_RASPBERRY, FCT_TEST_COMM, data, 1, true, 1, msg.message_id);
+		send(CAN_ADDR_RASPBERRY, FCT_ACCUSER_RECPETION, data, 1, true, 1, msg.message_id);
 	break;
 	default:
 	break;
@@ -76,17 +52,17 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 void configure_CAN(CAN_HandleTypeDef hcan, CAN_EMIT_ADDR addr) {
 	CAN_FilterTypeDef sFilterConfig;
 
-	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK; // Filtrage par liste ou par masque
-	sFilterConfig.FilterScale = CAN_FILTERSCALE_16BIT; // Filtre de 32 bits ou 1 de 16 bits
-	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0; // 3 files avec 3 filtres par file
-	sFilterConfig.SlaveStartFilterBank = 14; // Choix du filtre dans la banque
-	sFilterConfig.FilterActivation = ENABLE;
-	sFilterConfig.FilterMaskIdLow = 0b111100000000000;
-	sFilterConfig.FilterMaskIdHigh = 0b111100000000000; // Masque utilisé
+	sFilterConfig.FilterMode =           CAN_FILTERMODE_IDMASK; // Filtrage par liste ou par masque
+	sFilterConfig.FilterScale =          CAN_FILTERSCALE_16BIT; // Filtre de 32 bits ou 1 de 16 bits
+	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;   <       // 3 files avec 3 filtres par file
+	sFilterConfig.SlaveStartFilterBank = 14;                    // Choix du filtre dans la banque
+	sFilterConfig.FilterActivation =     ENABLE;
+	sFilterConfig.FilterMaskIdLow =      0b111100000000000;     // Masque LSBs
+	sFilterConfig.FilterMaskIdHigh =     0b111100000000000;     // Masque MSBs
 
-	sFilterConfig.FilterBank = 0;
-	sFilterConfig.FilterIdHigh = 0b001000000000000; // Adresse de l'émetteur
-	sFilterConfig.FilterIdLow = 0b111100000000000;
+	sFilterConfig.FilterBank =           0;
+	sFilterConfig.FilterIdHigh =         addr >> 9;             // Adresse de l'émetteur
+	sFilterConfig.FilterIdLow =          0b111100000000000;     // Adresse de broadcast 0x200000
 
 	HAL_CAN_ConfigFilter(&hcan, &sFilterConfig);
 
@@ -94,20 +70,16 @@ void configure_CAN(CAN_HandleTypeDef hcan, CAN_EMIT_ADDR addr) {
 	HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING); // Activer le mode interruption
 
 	hcan_p = hcan;
-	CanAdresse = addr;
 }
 
 
-int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint data_len, bool is_rep, uint rep_len, uint msg_id){
+int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id){
 	if (data_len > 8)
 		return CAN_E_DATA_SIZE_TOO_LONG;
 
-	if(addr < 0 || addr > CAN_MAX_VALUE_ADDR) return CAN_E_OOB_ADDR;
-	if(fct_code < 0 || fct_code > CAN_MAX_VALUE_CODE_FCT) return CAN_E_OOB_CODE_FCT;
+	if (addr > CAN_MAX_VALUE_ADDR) return CAN_E_OOB_ADDR;
+	if (fct_code > CAN_MAX_VALUE_CODE_FCT) return CAN_E_OOB_CODE_FCT;
 	if(rep_len < 0 || rep_len > CAN_MAX_VALUE_REP_NBR) return CAN_E_OOB_REP_NBR;
-
-	/*if(!is_valid_addr(addr)) return CAN_E_UNKNOW_ADDR;
-	if(!is_valid_code_fct(fct_code)) return CAN_E_UNKNOW_CODE_FCT;*/
 
 	CAN_TxHeaderTypeDef txHeader;
 	txHeader.DLC = data_len;
@@ -136,9 +108,6 @@ can_mess_t process_frame(CAN_RxHeaderTypeDef frame, uint8_t data[]){
 	if(rep.recv_addr < 0 || rep.recv_addr > CAN_MAX_VALUE_ADDR) exit(CAN_E_OOB_ADDR);
 	if(rep.fct_code < 0 || rep.fct_code > CAN_MAX_VALUE_CODE_FCT) exit(CAN_E_OOB_CODE_FCT);
 	if(rep.rep_id < 0 || rep.rep_id > CAN_MAX_VALUE_REP_NBR) exit(CAN_E_OOB_REP_NBR);
-	if(!is_valid_addr(rep.recv_addr)) exit(CAN_E_UNKNOW_ADDR);
-	if(!is_valid_addr(rep.emit_addr)) exit(CAN_E_UNKNOW_ADDR);
-	if(!is_valid_fct_code(rep.fct_code)) exit(CAN_E_UNKNOW_CODE_FCT);
 	if (frame.DLC > 8) exit(CAN_E_DATA_SIZE_TOO_LONG);
 
 	rep.data_len = frame.DLC;

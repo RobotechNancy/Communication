@@ -42,12 +42,10 @@
 
 /* Private variables ---------------------------------------------------------*/
 CAN_HandleTypeDef hcan1;
-CAN_HandleTypeDef hcan_p;
-uint8_t CanAdresse;
-graph_state_t state;
 
 /* USER CODE BEGIN PV */
-CAN_TxHeaderTypeDef TxHeader;
+CAN_HandleTypeDef hcan_p;
+graph_state_t state;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -91,7 +89,7 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
-  configure_CAN(hcan1, CAN_ADDR_BASE_ROULANTE);
+  configure_CAN(hcan1, CAN_ADDR_BASE_ROULANTE_E);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -192,10 +190,14 @@ static void MX_CAN1_Init(void)
   */
 static void MX_GPIO_Init(void)
 {
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
