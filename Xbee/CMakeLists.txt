@@ -28,7 +28,7 @@ pkg_check_modules(LOGS REQUIRED Logs)
 include_directories(${PROJECT_NAME}_test ${LOGS_INCLUDE_DIR})
 
 add_executable(${PROJECT_NAME}_test
-        main.cpp include/xbee_vars.h
+        src/main.cpp include/xbee_vars.h
         src/xbee.cpp include/xbee.h
         src/serialib.cpp include/serialib.h)
 

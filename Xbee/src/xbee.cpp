@@ -423,16 +423,16 @@ int XBee::processFrame(vector<int> recv_frame) {
             .adr_dest = recv_frame[2],
             .id_trame_low = recv_frame[3],
             .id_trame_high = recv_frame[4],
-            .nb_octets_msg = recv_frame[5],
+            .data_len = recv_frame[5],
             .code_fct = recv_frame[6],
-            .param = vector<int>{},
+            .data = vector<int>{},
             .crc_low = recv_frame[7 + recv_frame[5]],
             .crc_high = recv_frame[8 + recv_frame[5]],
             .end_seq = recv_frame[9 + recv_frame[5]]
     };
 
-    for (int i = 0; i < frame.nb_octets_msg; i++)
-        frame.param.push_back(recv_frame[7 + i]);
+    for (int i = 0; i < frame.data_len; i++)
+        frame.data.push_back(recv_frame[7 + i]);
     
     if (listeners.contains(frame.code_fct))
         listeners[frame.code_fct](frame);
@@ -451,7 +451,7 @@ int XBee::processFrame(vector<int> recv_frame) {
  *  @return 200 Succès
  *  @return -205 La taille des données est trop grande
  */
-int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const char *data, int data_len) {
+int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<int>& data, int data_len) {
     if (data_len > 255) {
         logger << "/!\\ (send frame) erreur " << XB_TRAME_E_DATALEN << " : taille des données trop grande" << mendl;
         return XB_TRAME_E_DATALEN;

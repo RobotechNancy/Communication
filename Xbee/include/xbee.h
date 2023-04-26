@@ -35,9 +35,9 @@ typedef struct {
     int adr_dest;           /*!< Adresse du destinataire de la trame */
     int id_trame_low;       /*!< Bits de poids faible de l'ID de la trame */
     int id_trame_high;      /*!< Bits de poids fort de l'ID de la trame */
-    int nb_octets_msg;      /*!< Nombre d'octets du champ data + code fonction */
+    int data_len;           /*!< Nombre d'octets du champ data + code fonction */
     int code_fct;           /*!< Code fonction de la trame */
-    std::vector<int> param; /*!< Data de la trame */
+    std::vector<int > data; /*!< Data de la trame */
     int crc_low;            /*!< Bits de poids faible du CRC */
     int crc_high;           /*!< Bits de poids fort du CRC */
     int end_seq;            /*!< Caractère de fin de trame */
@@ -60,7 +60,7 @@ public:
 
     [[noreturn]] void listen();
     void subscribe(uint32_t fct_code, const message_callback& callback);
-    int sendFrame(uint8_t dest, uint8_t fct_code, const char *data = nullptr, int data_len = 1);
+    int sendFrame(uint8_t dest, uint8_t fct_code, const std::vector<int>& data, int data_len = 1);
 private:
     serialib serial;
     Logger logger;

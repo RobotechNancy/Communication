@@ -7,16 +7,20 @@ using namespace std;
 
 int main() {
     XBee xbee;
-    int status;
+    int status = xbee.openSerialConnection();
 
-    if ((status = xbee.openSerialConnection()) != XB_SER_E_SUCCESS)
+    if (status != XB_SER_E_SUCCESS) {
+        cout << "Erreur à l'établissement de la connection série : " << status << endl;
         return status;
+    }
 
-    thread heartbeat(&XBee::sendHeartbeat, &xbee);
-    thread waitingtrame(&XBee::listen, &xbee);
-    thread reponse(&XBee::isXbeeResponding, &xbee);
+    xbee.subscribe(XB_FCT_TEST_ALIVE, [&](const frame_t& frame) {
+         xbee.sendFrame(frame.adr_emetteur, frame.code_fct, frame.data, frame.data_len);
+    });
 
-    while (true);
+    thread listen_thread(&XBee::listen, &xbee);
+    this_thread::sleep_for(chrono::seconds(3600));
+
     xbee.closeSerialConnection();
     return XB_E_SUCCESS;
 }
@@ -44,6 +48,7 @@ int main() {
 ## Installation
 
 Il suffit d'exécuter la commande `./lib_manager install Logs Xbee` puis de créer un CMakeLists.txt :
+
 ```cmake
 # Cette section à modifier selon votre projet
 project(my_project)
@@ -56,7 +61,7 @@ pkg_check_modules(LOGS REQUIRED Logs)
 pkg_check_modules(XBEE REQUIRED Xbee)
 
 # Ajoutez tous vos fichiers source dans "add_executable"
-add_executable(${PROJECT_NAME} main.cpp)
+add_executable(${PROJECT_NAME} src/main.cpp)
 target_link_libraries(${PROJECT_NAME} ${LOGS_LIBRARIES} ${XBEE_LIBRARIES})
 ```
 
