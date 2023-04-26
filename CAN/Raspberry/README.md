@@ -1,22 +1,26 @@
 # Librairie C++ du CAN (Raspberry)
 
-Il s'agit d'une version légèrement modifiée de la librairie de Théo RUSINOWITCH :
+Il s'agit d'une version modifiée de la librairie de Théo RUSINOWITCH :
 ```c++
 #include <robotech/can.h>
 
 int main() {
     Can can;
-    int err;
+    int err = can.init(CAN_ADDR_RASPBERRY_E);
     
-    if((err = can.init(CAN_ADDR_RASPBERRY_E)) < 0){
-      can.logC << "Erreur dans l'initialisation du CAN (n°" << dec << err << ")" << mendl;
+    if(err < 0){
+      can.logger << "Erreur dans l'initialisation du CAN (n°" << dec << err << ")" << mendl;
       return err;
     }
     
+    can.subscribe(FCT_ACCUSER_RECPETION, [](const can_mess_t& message) {
+        std::cout << "Bonjour ! (" << message.data[0] << ")" << std::endl;
+    });
+    
     can.start_listen();
     
-    uint8_t data[1] = {0};
-    can.send(CAN_ADDR_BROADCAST, FCT_TEST_COMM, data, 1, false, 0, 0);
+    uint8_t data[1] = {0x10};
+    can.send(CAN_ADDR_BROADCAST, FCT_ACCUSER_RECPETION, data, 1, false, 0, 0);
     
     while(true);
     return 0;
