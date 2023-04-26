@@ -10,30 +10,19 @@
 #ifndef XBEE_H
 #define XBEE_H
 
+#include <map>
 #include <string>
 #include <vector>
 #include <iomanip>
-#include <iostream>
 #include <chrono>
 #include <thread>
+#include <iostream>
 #include <iterator>
-#include <robotech/logs.h>
-#include <map>
+#include <functional>
 
 #include "serialib.h"
 #include "xbee_vars.h"
-
-
-/*!
- * @typedef aruco_t
- * @brief <br>Représente un tag ArUCO et ses coordonnées
- */
-typedef struct {
-    int id;
-    double x;
-    double y;
-    double z;
-} aruco_t;
+#include "robotech/logs.h"
 
 
 /*!
@@ -54,6 +43,9 @@ typedef struct {
     int end_seq;            /*!< Caractère de fin de trame */
 } frame_t;
 
+// Type d'une fonction qui gère un code fonction
+typedef std::function<void(const frame_t&)> message_callback;
+
 
 /*!  @class  XBee
  *   @brief  Classe pour communiquer avec les modules XBee en UART
@@ -66,14 +58,15 @@ public:
     int openSerialConnection();
     void closeSerialConnection();
 
+    [[noreturn]] void listen();
+    void subscribe(uint32_t fct_code, const message_callback& callback);
     int sendFrame(uint8_t dest, uint8_t fct_code, const char *data = nullptr, int data_len = 1);
-    [[noreturn]] void waitForATrame();
 private:
     serialib serial;
     Logger logger;
 
     int nb_trame = 0;
-    std::vector<aruco_t> aruco_tags;
+    std::map<uint32_t, message_callback> listeners;
 
     bool enterATMode();
     bool exitATMode();
@@ -84,7 +77,6 @@ private:
 
     int processResponse(const std::vector<int> &response);
     int processSubFrame(std::vector<int> &recv_msg);
-    int processFctCode(int fct_code, int exp, const std::vector<int> &data);
     int processFrame(std::vector<int> recv_frame);
 
     template<typename T> static void printFrame(const T &frame, int data_len);

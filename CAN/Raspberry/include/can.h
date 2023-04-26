@@ -13,6 +13,8 @@
 #include <map>
 #include <thread>
 #include <cstring>
+#include <functional>
+
 #include <net/if.h>
 #include <iostream>
 #include <linux/can.h>
@@ -24,6 +26,9 @@
 #include "robotech/logs.h"
 
 
+// Type d'une fonction qui gère un code fonction
+typedef std::function<void(const can_mess_t&)> message_callback;
+
 /*!
  * @class Can
  * @brief Classe permettant de gérer la communication CAN
@@ -32,17 +37,16 @@ class Can {
 private:
     int sock;
     std::thread *listen_thread;
-    std::map<uint8_t, can_mess_t> messages;
+    std::map<uint32_t, message_callback> listeners;
 
     [[noreturn]] void listen();
-    int process_frame(can_mess_t &response, can_frame frame) const;
-    void process_resp(can_mess_t &response);
+    int format_frame(can_mess_t &response, can_frame& frame) const;
 public:
     Can();
     Logger logger;
-    can_mess_t get_message(uint8_t id);
 
     int init(CAN_EMIT_ADDR emit_addr);
+    void subscribe(uint32_t fct_code, const message_callback& callback);
     void start_listen();
     int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id);
 };

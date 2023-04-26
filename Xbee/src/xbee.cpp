@@ -306,16 +306,22 @@ bool XBee::writeATConfig() {
 
 // Envoi/Réception/Traitement des trames de messages
 
+
+/*!
+ * @brief Lier un code fonction à une fonction
+ * @param fct_code Le code fonction à écouter
+ * @param callback La fonction à exécuter
+ */
+void XBee::subscribe(uint32_t fct_code, const message_callback& callback) {
+    listeners.insert(std::make_pair(fct_code, callback));
+}
+
+
 /*!
  *  @brief Attendre, vérifier et traiter une trame reçue
  */
-[[noreturn]] void XBee::waitForATrame() {
+[[noreturn]] void XBee::listen() {
     vector<int> response;
-
-    if (XB_ADR_CURRENT == XB_ADR_ROBOT_01) {
-        char msg[1] = {XB_V_ACK};
-        sendFrame(XB_ADR_CAMERA_01, XB_FCT_TEST_ALIVE, msg, 1);
-    }
 
     while (true) {
         response.clear();
@@ -428,58 +434,12 @@ int XBee::processFrame(vector<int> recv_frame) {
     for (int i = 0; i < frame.nb_octets_msg; i++)
         frame.param.push_back(recv_frame[7 + i]);
     
-    processFctCode(frame.code_fct, frame.adr_emetteur, frame.param);
-
-    logger << "(process frame) frame n°" << frame.id_trame_high + frame.id_trame_low
-                                         << " a été traitée avec succès " << mendl;
+    if (listeners.contains(frame.code_fct))
+        listeners[frame.code_fct](frame);
+    else
+        logger << "(processFrame) Code fonction non traité : " << frame.code_fct << mendl;
 
     return XB_TRAME_E_SUCCESS;
-}
-
-
-/*!
- *  @brief  Interprète le code fonction issu d'une trame reçue
- *  @param  fct_code Le code fonction issu d'une trame reçue
- *  @param  exp L'adresse de l'expéditeur de la trame
- *  @return 100 Succès
- *  @return -102 Code fonction inconnu
- *  @return -103 Adresse inconnue
- */
-int XBee::processFctCode(int fct_code, int exp, const vector<int> &data) {
-    char msg[1] = {XB_V_ACK};
-
-    switch (exp) {
-        case XB_ADR_CAMERA_01:
-        case XB_ADR_CAMERA_02:
-        case XB_ADR_ROBOT_01:
-        case XB_ADR_ROBOT_02:
-        break;
-        default:
-            logger << "/!\\ (process code fonction) erreur " << XB_ADR_E_UNKNOWN << " : adresse inconnue" << mendl;
-            return XB_ADR_E_UNKNOWN;
-    }
-
-    switch (fct_code) {
-        case XB_FCT_TEST_ALIVE:
-            sendFrame(exp, XB_FCT_TEST_ALIVE, msg, 1);
-        break;
-        case XB_FCT_ARUCO_POS:
-            for (int i = 0; i < data.size() / 4; i++) {
-                aruco_tags[i] = {
-                        data[4 * i],
-                        (double) data[4 * i + 1],
-                        (double) data[4 * i + 2],
-                        (double) data[4 * i + 3]
-                };
-            }
-        break;
-        default :
-            logger << "/!\\ (process code fonction) erreur " << XB_FCT_E_UNKNOWN << " : code fonction inconnu" << mendl;
-            return XB_FCT_E_UNKNOWN;
-    }
-
-    logger << "(process code fonction) code fonction n°" << fct_code << " traité avec succès" << mendl;
-    return XB_FCT_E_SUCCESS;
 }
 
 

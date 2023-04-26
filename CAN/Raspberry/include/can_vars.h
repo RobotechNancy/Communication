@@ -10,7 +10,10 @@
 #ifndef CAN_CAN_VARS_H
 #define CAN_CAN_VARS_H
 
-#define CAN_BUS_NAME "can0"
+#include <cstdint>
+
+
+#define CAN_BUS_NAME "vcan0"
 
 //                                0b00000000000000000000000000000
 //                                Ob|1  |5   |10  |15  |20  |25 |29
@@ -79,7 +82,7 @@ typedef enum {
 
 /*!
  * @typedef can_mess_t
- * @brief   \n Trame customisée pour le bus CAN
+ * @brief   Trame customisée pour le bus CAN
  */
 typedef struct {
     uint32_t recv_addr;  /*!< Adresse de réception */

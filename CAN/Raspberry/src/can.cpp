@@ -13,8 +13,8 @@ using namespace std;
 
 Can::Can():
     sock(0),
-    listen_thread(),
-    logger("can")
+    logger("can"),
+    listen_thread()
 {}
 
 
@@ -54,17 +54,66 @@ int Can::init(CAN_EMIT_ADDR emit_addr) {
 
 
 /*!
+ * @brief Lier un code fonction à une fonction
+ * @param fct_code Le code fonction à écouter
+ * @param callback La fonction à exécuter
+ */
+void Can::subscribe(uint32_t fct_code, const message_callback& callback) {
+    listeners.insert(std::make_pair(fct_code, callback));
+}
+
+
+/*!
  * @brief <br>Démarrer un thread d'écoute du bus CAN
  */
 void Can::start_listen() {
     listen_thread = new thread;
     *listen_thread = thread(&Can::listen, this);
-
     logger << "Thread d'écoute du CAN démarré" << mendl;
 }
 
 
-int Can::process_frame(can_mess_t &response, can_frame frame) const {
+[[noreturn]] void Can::listen() {
+    int err;
+    can_frame frame{};
+    can_mess_t response;
+
+    while(true) {
+        if((err = format_frame(response, frame)) < 0){
+            logger << "Erreur dans le décodage d'une trame (err n°" << dec << err << ")" << mendl;
+            continue;
+        }
+
+        logger << "GET : ";
+        logger << "   recv_addr : " << hex << response.recv_addr;
+        logger << "   emit_addr : " << response.emit_addr;
+        logger << "   fct_code : " << response.fct_code;
+        logger << "   rep_id : " << response.rep_id;
+        logger << "   is_rep : " << response.is_rep;
+        logger << "   data : [" << response.data_len << "] ";
+
+        for (int i = 0; i < response.data_len ; i++)
+            logger << hex << showbase << (int) response.data[i] << " ";
+
+        logger << mendl;
+
+        if (listeners.contains(response.fct_code)) {
+            listeners[response.fct_code](response);
+            continue;
+        }
+
+        logger << "Code fonction non traité : " << hex << showbase << response.fct_code << mendl;
+    }
+}
+
+
+/*!
+ * @brief Remplir un object "can_mess_t" à partir d'un objet "can_frame"
+ * @param response L'objet à remplir
+ * @param frame Le message reçu
+ * @return Un code d'erreur
+ */
+int Can::format_frame(can_mess_t &response, can_frame& frame) const {
     if (read(sock, &frame, sizeof(struct can_frame)) < 0) {
         perror("Read");
         return CAN_E_READ_ERROR;
@@ -73,97 +122,21 @@ int Can::process_frame(can_mess_t &response, can_frame frame) const {
     if (frame.can_dlc > 8)
         return CAN_E_DATA_SIZE_TOO_LONG;
 
-    response.recv_addr = (frame.can_id & CAN_FILTER_ADDR_EMETTEUR )  ;
-    response.emit_addr = (frame.can_id &  CAN_FILTER_ADDR_RECEPTEUR) ;
+    response.recv_addr = (frame.can_id & CAN_FILTER_ADDR_EMETTEUR);
+    response.emit_addr = (frame.can_id &  CAN_FILTER_ADDR_RECEPTEUR);
     response.fct_code = (frame.can_id & CAN_FILTER_CODE_FCT);
     response.is_rep = (frame.can_id & CAN_FILTER_IS_REP) >> CAN_DECALAGE_IS_REP;
-    response.rep_id = (frame.can_id & CAN_FILTER_REP_NBR) ;
+    response.rep_id = (frame.can_id & CAN_FILTER_REP_NBR);
     response.data_len = frame.can_dlc;
 
     for (int i = 0; i < frame.can_dlc; i++){
-        if(frame.data[i] <0 || frame.data[i] > 255)
+        if(frame.data[i] < 0 || frame.data[i] > 255)
             return CAN_E_OOB_DATA;
+
         response.data[i] = frame.data[i];
     }
 
     return 0;
-}
-
-
-[[noreturn]] void Can::listen() {
-    while(true){
-        can_frame frame{};
-        can_mess_t response;
-
-        int err;
-        if((err = process_frame(response, frame)) < 0){
-            logger << "Erreur dans le décodage d'une trame (err n°" << dec << err << ")" << mendl;
-            continue;
-        }
-
-        logger << "get : ";
-        logger << "addr : " << hex << response.recv_addr;
-        logger << "   emetteur : " << response.emit_addr;
-        logger << "   codeFct : " << response.fct_code;
-        logger << "   isRep : " << response.is_rep;
-        logger << "   RepId : " << response.rep_id;
-        logger << "   Data : [" << response.data_len << "] ";
-
-        for (int i = 0; i < response.data_len ; i++)
-            logger << hex << showbase << (int) response.data[i] << " ";
-
-        logger << mendl;
-        process_resp(response);
-    }
-}
-
-
-void Can::process_resp(can_mess_t &response) {
-    if(response.is_rep)
-        messages.insert(pair<int, can_mess_t>(response.rep_id, response));
-
-    switch (response.emit_addr) {
-        case CAN_ADDR_RASPBERRY_E:
-        case CAN_ADDR_BASE_ROULANTE_E:
-        case CAN_ADDR_ODOMETRIE_E:
-        case CAN_ADDR_ACTIONNEUR_E:
-        case CAN_ADDR_BROADCAST_E:
-        break;
-        default:
-            logger << "Adresse inconnue : " << hex << showbase << response.emit_addr << mendl;
-            return;
-    }
-    
-    switch (response.fct_code) {
-        case FCT_AVANCE:
-        case FCT_REP_AVANCE:
-        case FCT_DETECTION_TOF:
-        case FCT_GET_VARIATION_XY:
-        case FCT_ACCUSER_RECPETION:
-        case FCT_CHANGEMENT_ETAT:
-        case FCT_GET_OPTIQUE:
-        break;
-        default:
-            logger << "Code fonction inconnu : " << hex << showbase << response.fct_code << mendl;
-            return;
-    }
-}
-
-
-/*!
- * @brief  <br>Récupérer un message reçu
- * @param  id L'identifiant du message
- * @return Le message correspondant ou rien
- */
-can_mess_t Can::get_message(uint8_t id) {
-    auto it = messages.find(id);
-
-    if(it == messages.end())
-        return {};
-
-    can_mess_t msg = it->second;
-    messages.erase(it);
-    return msg;
 }
 
 
@@ -189,13 +162,12 @@ int Can::send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t *data, uint8_t data_
     frame.can_id = (uint8_t) addr | CAN_ADDR_RASPBERRY_E | fct_code | rep_len | msg_id << CAN_DECALAGE_ID_MSG | is_rep << CAN_DECALAGE_IS_REP | CAN_EFF_FLAG;
 
     logger << "SEND: ";
-    logger << "   addr : " << hex << showbase << addr;
-    logger << "   emetteur : " << CAN_ADDR_RASPBERRY_E;
-    logger << "   codeFct : " << fct_code;
-    logger << "   id msg : " << msg_id;
-    logger << "   isRep : " << is_rep;
-    logger << "   RepId : " << rep_len;
-    logger << "   Data : ["<< data_len <<"] ";
+    logger << "   recv_addr : " << hex << showbase << addr;
+    logger << "   emit_addr : " << CAN_ADDR_RASPBERRY_E;
+    logger << "   fct_code : " << fct_code;
+    logger << "   rep_id : " << msg_id;
+    logger << "   is_rep : " << is_rep;
+    logger << "   data : ["<< data_len <<"] ";
 
     for (int i = 0; i < data_len; i++) {
         if(data[i] <0 || data[i] > 255)

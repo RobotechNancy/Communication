@@ -62,7 +62,7 @@ void configure_CAN(CAN_HandleTypeDef hcan, CAN_EMIT_ADDR addr) {
 
 	sFilterConfig.FilterBank =           0;
 	sFilterConfig.FilterIdHigh =         addr >> 9;             // Adresse de l'émetteur
-	sFilterConfig.FilterIdLow =          0b111100000000000;     // Adresse de broadcast 0x200000
+	sFilterConfig.FilterIdLow =          0b111100000000000;     // Adresse de broadcast
 
 	HAL_CAN_ConfigFilter(&hcan, &sFilterConfig);
 
@@ -95,7 +95,7 @@ int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len,
 }
 
 
-can_mess_t process_frame(CAN_RxHeaderTypeDef frame, uint8_t data[]){
+can_mess_t process_frame(CAN_RxHeaderTypeDef frame, const uint8_t data[]){
 	can_mess_t rep;
 
 	rep.recv_addr = (frame.ExtId & CAN_FILTER_ADDR_EMETTEUR);

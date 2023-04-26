@@ -13,8 +13,11 @@ int main() {
         return err;
     }
 
+    can.subscribe(0x32000, [](const can_mess_t& message) {
+       std::cout << "Bonjour !" << std::endl;
+    });
+
     can.start_listen();
-    can.send(CAN_ADDR_BROADCAST, FCT_ACCUSER_RECPETION, nullptr, 0, false, 0, 0);
 
     while (true);
     return 0;

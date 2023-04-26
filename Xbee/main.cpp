@@ -20,7 +20,7 @@ int main() {
         return status;
     }
 
-    thread waitingtrame(&XBee::waitForATrame, &xbee);
+    thread waitingtrame(&XBee::listen, &xbee);
     this_thread::sleep_for(chrono::seconds(3600));
 
     xbee.closeSerialConnection();

@@ -13,7 +13,7 @@ int main() {
         return status;
 
     thread heartbeat(&XBee::sendHeartbeat, &xbee);
-    thread waitingtrame(&XBee::waitForATrame, &xbee);
+    thread waitingtrame(&XBee::listen, &xbee);
     thread reponse(&XBee::isXbeeResponding, &xbee);
 
     while (true);
