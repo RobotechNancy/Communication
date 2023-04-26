@@ -409,7 +409,7 @@ can_mess_t process_frame(CAN_RxHeaderTypeDef frame, uint8_t data[]){
  8000422:	6cfb      	ldr	r3, [r7, #76]	; 0x4c
  8000424:	2b08      	cmp	r3, #8
  8000426:	d902      	bls.n	800042e <process_frame+0x86>
- 8000428:	4816      	ldr	r0, [pc, #88]	; (8000484 <process_frame+0xdc>)
+ 8000428:	4816      	ldr	r0, [pc, #88]	; (8000484 <format_frame+0xdc>)
  800042a:	f002 f9b1 	bl	8002790 <exit>
 
 	rep.data_len = frame.DLC;

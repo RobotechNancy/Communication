@@ -2114,7 +2114,7 @@ LOAD /opt/st/stm32cubeide_1.12.0/plugins/com.st.stm32cube.ide.mcu.externaltools.
                 0x000000000800030c                send
  .text.process_frame
                 0x00000000080003a8       0xe0 ./Core/Src/can.o
-                0x00000000080003a8                process_frame
+                0x00000000080003a8                format_frame
  .text.main     0x0000000008000488       0x40 ./Core/Src/main.o
                 0x0000000008000488                main
  .text.SystemClock_Config

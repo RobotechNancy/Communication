@@ -1,4 +1,4 @@
 can.c:29:6:HAL_CAN_RxFifo0MsgPendingCallback	3
 can.c:52:6:configure_CAN	1
 can.c:76:5:send	5
-can.c:98:12:process_frame	2
+can.c:98:12:format_frame	2
