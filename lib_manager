@@ -4,28 +4,25 @@ NC='\033[0m'
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 GRAY='\033[0;37m'
+ROOT_DIR="$(pwd)"
 
 case $1 in
   install)
     [[ $# -gt 1 ]] && libraries="${*:2}" || libraries="Logs CAN/Raspberry XBee"
 
     for lib in $libraries; do
-      [[ ! -d "$lib" ]] && echo -e "${RED}The library \"$lib\" does not exist${NC}" && continue
+      [[ ! -d "$lib" ]] && echo -e "${RED}Le dossier \"$lib\" n'existe pas${NC}" && continue
+      [[ ! -f "$lib"/CMakeLists.txt ]] && echo -e "${RED}Le dossier \"$lib\" ne contient pas de librairie${NC}" && continue
 
-      if [ "$lib" == "CAN/" ]; then cd "$lib"/Raspberry || exit
-      else cd "$lib" || exit
-      fi
-
+      cd "$lib" || exit
       [[ ! -d cmake-install ]] && mkdir cmake-install
 
       cd cmake-install || exit
       cmake ..
       sudo make install
 
-      if [ "$lib" == "CAN/" ]; then cd ../../.. || exit
-      else cd ../.. || exit
-      fi
-      echo -e "${GREEN}The library \"$lib\" has been installed${NC}"
+      cd "$ROOT_DIR" || exit
+      echo -e "${GREEN}La librairie \"$lib\" a été installée${NC}"
     done
   ;;
 
@@ -34,12 +31,12 @@ case $1 in
         [[ -d "$d"/cmake-install ]] && flag=1 && sudo rm -r "$d"/cmake-install
     done
 
-    [[ $flag -eq 1 ]] && echo -e "${GREEN}All cmake-install directories have been deleted${NC}" \
-                      || echo -e "${RED}No cmake-install directories have been found${NC}"
+    [[ $flag -eq 1 ]] && echo -e "${GREEN}Tous les dossiers \"cmake-install\" ont été supprimés${NC}" \
+                      || echo -e "${RED}Aucun dossier \"cmake-install\" trouvé${NC}"
   ;;
 
   *)
-    echo -e "${RED}Usage:${NC} lib_manager [install|clean] ${GRAY}<...libs>${NC}"
+    echo -e "${RED}Utilisation :${NC} lib_manager [install|clean] ${GRAY}<...libs>${NC}"
     exit 1
   ;;
 esac
