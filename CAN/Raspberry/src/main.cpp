@@ -2,7 +2,7 @@
 // Created by mrspaar on 1/20/23.
 //
 
-#include "../include/can.h"
+#include "can.h"
 
 int main() {
     Can can;

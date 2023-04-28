@@ -13,6 +13,7 @@
 #include <map>
 #include <thread>
 #include <cstring>
+#include <unistd.h>
 #include <functional>
 
 #include <net/if.h>

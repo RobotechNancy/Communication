@@ -7,7 +7,7 @@
  * @details Version modifiée de la librairie de Théo RUSINOWITCH (v4.1a)
  */
 
-#include "../include/can.h"
+#include "can.h"
 using namespace std;
 
 

@@ -21,7 +21,7 @@ install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CMAKE_INSTALL
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LOGS REQUIRED Logs)
-include_directories(${PROJECT_NAME}_test ${LOGS_INCLUDE_DIR})
+include_directories(${PROJECT_NAME}_test ${LOGS_INCLUDE_DIR} include)
 
 add_executable(${PROJECT_NAME}_test src/main.cpp include/can_vars.h src/can.cpp include/can.h)
 target_link_libraries(${PROJECT_NAME}_test ${LOGS_LIBRARIES} Threads::Threads)
