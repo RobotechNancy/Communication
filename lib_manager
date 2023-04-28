@@ -7,7 +7,7 @@ GRAY='\033[0;37m'
 
 case $1 in
   install)
-    [[ $# -gt 1 ]] && libraries="${*:2}" || libraries="*/"
+    [[ $# -gt 1 ]] && libraries="${*:2}" || libraries="Logs CAN/Raspberry XBee"
 
     for lib in $libraries; do
       [[ ! -d "$lib" ]] && echo -e "${RED}The library \"$lib\" does not exist${NC}" && continue

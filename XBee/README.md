@@ -58,7 +58,7 @@ cmake_minimum_required(VERSION 3.24)
 # La librairie CAN nécessite aussi la librairie Logs
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LOGS REQUIRED Logs)
-pkg_check_modules(XBEE REQUIRED Xbee)
+pkg_check_modules(XBEE REQUIRED XBee)
 
 # Ajoutez tous vos fichiers source dans "add_executable"
 add_executable(${PROJECT_NAME} src/main.cpp)

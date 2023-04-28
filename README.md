@@ -25,7 +25,7 @@ Le script `lib_manager` permet d'installer les librairies sur votre système :
 ./lib_manager install
 
 # Installer des librairies spécifiques
-./lib_manager install CAN Logs
+./lib_manager install CAN/Raspberry Logs
 
 # Supprimer les dossiers de build
 ./lib_manager clean

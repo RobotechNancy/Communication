@@ -251,7 +251,7 @@ bool XBee::readATResponse(const char *value, int mode) {
         readRx<string>(response);
         serial.flushReceiver();
 
-        logger << "(config AT) réponse du Xbee : " << mendl;
+        logger << "(config AT) réponse du XBee : " << mendl;
         logger << response << mendl;
 
         return !response.empty() && response != XB_AT_V_END_LINE;
@@ -260,7 +260,7 @@ bool XBee::readATResponse(const char *value, int mode) {
     readRx<string>(response);
     serial.flushReceiver();
 
-    logger << "(config AT) Réponse du Xbee : " << response << mendl;
+    logger << "(config AT) Réponse du XBee : " << response << mendl;
     return mode == 0 && response == value;
 }
 
