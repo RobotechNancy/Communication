@@ -60,7 +60,7 @@ public:
 
     [[noreturn]] void listen();
     void subscribe(uint32_t fct_code, const message_callback& callback);
-    int sendFrame(uint8_t dest, uint8_t fct_code, const std::vector<int>& data, int data_len = 1);
+    int sendFrame(uint8_t dest, uint8_t fct_code, const std::vector<uint8_t>& data, int data_len = 1);
 private:
     serialib serial;
     Logger logger;
