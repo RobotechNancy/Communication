@@ -52,7 +52,7 @@ typedef std::function<void(const frame_t&)> message_callback;
  */
 class XBee {
 public:
-    XBee(): logger("xbee") {};
+    explicit XBee(uint8_t addr);
     ~XBee() = default;
 
     int openSerialConnection();
@@ -66,6 +66,7 @@ private:
     Logger logger;
 
     int nb_trame = 0;
+    uint8_t current_addr;
     std::map<uint32_t, message_callback> listeners;
 
     bool enterATMode();

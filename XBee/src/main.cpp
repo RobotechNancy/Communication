@@ -12,7 +12,7 @@ using namespace std;
 
 
 int main() {
-    XBee xbee;
+    XBee xbee(XB_ADR_CAMERA_01);
     int status = xbee.openSerialConnection();
 
     if (status != XB_SER_E_SUCCESS) {

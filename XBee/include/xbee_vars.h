@@ -17,11 +17,10 @@
 #define XB_PARITY_PRIMARY SERIAL_PARITY_NONE
 #define XB_STOPBITS_PRIMARY SERIAL_STOPBITS_1
 
-#define XB_ADR_ROBOT_01   0x12
-#define XB_ADR_ROBOT_02   0x13
-#define XB_ADR_CAMERA_01  0x14
-#define XB_ADR_CAMERA_02  0x15
-#define XB_ADR_CURRENT XB_ADR_ROBOT_01
+#define XB_ADR_ROBOT_01   1
+#define XB_ADR_ROBOT_02   2
+#define XB_ADR_CAMERA_01  3
+#define XB_ADR_CAMERA_02  4
 
 
 // Paramètres de la trame message
@@ -36,10 +35,6 @@
 
 // Code d'erreurs
 #define XB_E_SUCCESS 000
-
-#define XB_FCT_E_SUCCESS 100
-#define XB_FCT_E_UNKNOWN (-102)
-#define XB_ADR_E_UNKNOWN (-103)
 
 #define XB_TRAME_E_SUCCESS 200
 #define XB_TRAME_E_WRONG_ADR (-203)
@@ -106,27 +101,18 @@
 #define XB_AT_V_PAN_ID "3332\r"
 
 #define XB_AT_CMD_COORDINATOR "ATCE"
-#if XB_ADR_CURRENT == XB_ADR_ROBOT_01
-    #define XB_AT_V_COORDINATOR "1\r"
-#else
-    #define XB_AT_V_COORDINATOR "0\r"
-#endif
+#define XB_AT_V_COORDINATOR "1\r"
+#define XB_AT_V_END_DEVICE "0\r"
+
+#define XB_AT_CMD_16BIT_SOURCE_ADDR "ATMY"
+
 
 #define XB_AT_CMD_LOW_DEST_ADDR "ATDL"
 #define XB_AT_V_LOW_DEST_ADDR "FFFF\r"
+
 #define XB_AT_CMD_HIGH_DEST_ADDR "ATDH"
 #define XB_AT_V_HIGH_DEST_ADDR "0\r"
 
-#define XB_AT_CMD_16BIT_SOURCE_ADDR "ATMY"
-#if XB_ADR_CURRENT == XB_ADR_ROBOT_01
-    #define XB_AT_V_16BIT_SOURCE_ADDR "1\r"
-#elif XB_ADR_CURRENT == XB_ADR_ROBOT_02
-    #define XB_AT_V_16BIT_SOURCE_ADDR "2\r"
-#elif XB_ADR_CURRENT == XB_ADR_CAMERA_01
-    #define XB_AT_V_16BIT_SOURCE_ADDR "3\r"
-#elif XB_ADR_CURRENT == XB_ADR_CAMERA_02
-    #define XB_AT_V_16BIT_SOURCE_ADDR "4\r"
-#endif
 
 // Réponses AT
 #define XB_AT_R_EMPTY ""

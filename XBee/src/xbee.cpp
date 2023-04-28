@@ -13,6 +13,8 @@ using namespace std;
 
 // Configuration et initialisation
 
+XBee::XBee(uint8_t addr): current_addr(addr), logger("xbee") {}
+
 /*!
  *  @brief  Nettoyer le buffer et ouvrir la connexion UART
  *  @param  mode Configuration de port à utiliser
@@ -155,9 +157,11 @@ int XBee::checkATConfig() {
         return XB_AT_E_PAN_ID;
     }
 
-    if (sendATCommand(XB_AT_CMD_COORDINATOR, XB_AT_V_COORDINATOR, XB_AT_M_GET))
+    const char* coordinator = (current_addr == 1)? XB_AT_V_COORDINATOR : XB_AT_V_END_DEVICE;
+
+    if (sendATCommand(XB_AT_CMD_COORDINATOR, coordinator, XB_AT_M_GET))
         logger << "(config AT) mode coordinateur vérifié avec succès" << mendl;
-    else if (sendATCommand(XB_AT_CMD_COORDINATOR, XB_AT_V_COORDINATOR))
+    else if (sendATCommand(XB_AT_CMD_COORDINATOR, coordinator))
         logger << "(config AT) mode coordinateur configuré avec succès" << mendl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_COORDINATOR
@@ -165,9 +169,12 @@ int XBee::checkATConfig() {
         return XB_AT_E_COORDINATOR;
     }
 
-    if (sendATCommand(XB_AT_CMD_16BIT_SOURCE_ADDR, XB_AT_V_16BIT_SOURCE_ADDR, XB_AT_M_GET))
+    char addr[3];
+    sprintf(addr, "%d\r", current_addr);
+
+    if (sendATCommand(XB_AT_CMD_16BIT_SOURCE_ADDR, addr, XB_AT_M_GET))
         logger << "(config AT) adresse source 16bits vérifiée avec succès" << mendl;
-    else if (sendATCommand(XB_AT_CMD_16BIT_SOURCE_ADDR, XB_AT_V_16BIT_SOURCE_ADDR))
+    else if (sendATCommand(XB_AT_CMD_16BIT_SOURCE_ADDR, addr))
         logger << "(config AT) adresse source 16bits configurée avec succès" << mendl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_16BIT_SOURCE_ADDR
@@ -414,7 +421,7 @@ int XBee::processSubFrame(vector<int> &recv_msg) {
  *  @return -203 La trame n'est pas adressé au module
  */
 int XBee::processFrame(vector<int> recv_frame) {
-    if (XB_ADR_CURRENT != recv_frame[2])
+    if (current_addr != recv_frame[2])
         return XB_TRAME_E_WRONG_ADR;
 
     frame_t frame = {
@@ -467,7 +474,7 @@ int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<int>& data, int
     uint8_t frame_id_high = (frame_id >> 8) & 0xFF;
 
     frame[0] = XB_V_START;
-    frame[1] = XB_ADR_CURRENT;
+    frame[1] = current_addr;
     frame[2] = dest;
     frame[3] = frame_id_low + XB_V_SEQ_SHIFT;
     frame[4] = frame_id_high + XB_V_SEQ_SHIFT;
