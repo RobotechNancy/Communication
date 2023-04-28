@@ -13,7 +13,8 @@ using namespace std;
 
 // Configuration et initialisation
 
-XBee::XBee(uint8_t addr): current_addr(addr), logger("xbee") {}
+XBee::XBee(const char* port, uint8_t addr):
+        module_port(port), module_addr(addr), logger("xbee") {}
 
 /*!
  *  @brief  Nettoyer le buffer et ouvrir la connexion UART
@@ -31,17 +32,17 @@ XBee::XBee(uint8_t addr): current_addr(addr), logger("xbee") {}
  */
 int XBee::openSerialConnection() {
     int status = serial.openDevice(
-            XB_SERIAL_PORT_PRIMARY, XB_BAUDRATE_PRIMARY, XB_DATABITS_PRIMARY, XB_PARITY_PRIMARY, XB_STOPBITS_PRIMARY
+            module_port, XB_BAUDRATE_PRIMARY, XB_DATABITS_PRIMARY, XB_PARITY_PRIMARY, XB_STOPBITS_PRIMARY
     );
 
     if (status != XB_SER_E_SUCCESS) {
         logger << "(serial) /!\\ erreur " << status << " : impossible d'ouvrir le port "
-               << XB_SERIAL_PORT_PRIMARY << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parités : "
+               << module_port << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parités : "
                << XB_PARITY_PRIMARY << mendl;
         return status;
     }
 
-    logger << "(serial) connexion ouverte avec succès sur le port " << XB_SERIAL_PORT_PRIMARY
+    logger << "(serial) connexion ouverte avec succès sur le port " << module_port
             << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parité : " << XB_PARITY_PRIMARY << mendl;
 
     if ((status = checkATConfig()) < 0)
@@ -157,7 +158,7 @@ int XBee::checkATConfig() {
         return XB_AT_E_PAN_ID;
     }
 
-    const char* coordinator = (current_addr == 1)? XB_AT_V_COORDINATOR : XB_AT_V_END_DEVICE;
+    const char* coordinator = (module_addr == 1) ? XB_AT_V_COORDINATOR : XB_AT_V_END_DEVICE;
 
     if (sendATCommand(XB_AT_CMD_COORDINATOR, coordinator, XB_AT_M_GET))
         logger << "(config AT) mode coordinateur vérifié avec succès" << mendl;
@@ -170,7 +171,7 @@ int XBee::checkATConfig() {
     }
 
     char addr[3];
-    sprintf(addr, "%d\r", current_addr);
+    sprintf(addr, "%d\r", module_addr);
 
     if (sendATCommand(XB_AT_CMD_16BIT_SOURCE_ADDR, addr, XB_AT_M_GET))
         logger << "(config AT) adresse source 16bits vérifiée avec succès" << mendl;
@@ -421,7 +422,7 @@ int XBee::processSubFrame(vector<int> &recv_msg) {
  *  @return -203 La trame n'est pas adressé au module
  */
 int XBee::processFrame(vector<int> recv_frame) {
-    if (current_addr != recv_frame[2])
+    if (module_addr != recv_frame[2])
         return XB_TRAME_E_WRONG_ADR;
 
     frame_t frame = {
@@ -474,7 +475,7 @@ int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<int>& data, int
     uint8_t frame_id_high = (frame_id >> 8) & 0xFF;
 
     frame[0] = XB_V_START;
-    frame[1] = current_addr;
+    frame[1] = module_addr;
     frame[2] = dest;
     frame[3] = frame_id_low + XB_V_SEQ_SHIFT;
     frame[4] = frame_id_high + XB_V_SEQ_SHIFT;
