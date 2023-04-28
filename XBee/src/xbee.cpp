@@ -7,7 +7,7 @@
  *  @details Version modifiée de la librairie de Samuel-Charles DITTE-DESTREE (v3.0)
  */
 
-#include "../include/xbee.h"
+#include "xbee.h"
 using namespace std;
 
 

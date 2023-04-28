@@ -1,6 +1,6 @@
 set(CMAKE_CXX_STANDARD 20)
 cmake_minimum_required(VERSION 3.16)
-project(Xbee VERSION 0.1 DESCRIPTION "Communication Xbee pour raspberry pi")
+project(XBee VERSION 0.1 DESCRIPTION "Communication XBee pour raspberry pi")
 
 add_library(${PROJECT_NAME}
         include/xbee_vars.h
@@ -25,7 +25,7 @@ install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CMAKE_INSTALL
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(LOGS REQUIRED Logs)
-include_directories(${PROJECT_NAME}_test ${LOGS_INCLUDE_DIR})
+include_directories(${PROJECT_NAME}_test ${LOGS_INCLUDE_DIR} include)
 
 add_executable(${PROJECT_NAME}_test
         src/main.cpp include/xbee_vars.h

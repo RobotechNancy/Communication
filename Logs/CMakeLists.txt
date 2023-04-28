@@ -19,4 +19,5 @@ install(TARGETS ${PROJECT_NAME}
 configure_file(${PROJECT_NAME}.pc.in ${PROJECT_NAME}.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 
+include_directories(${PROJECT_NAME}_test PRIVATE include)
 add_executable(${PROJECT_NAME}_test src/main.cpp src/logs.cpp)

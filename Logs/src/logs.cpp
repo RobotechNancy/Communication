@@ -7,7 +7,7 @@
  * @details Version modifiée de la librairie de Théo RUSINOWITCH (v4.1a)
  */
 
-#include "../include/logs.h"
+#include "logs.h"
 using namespace std;
 
 
