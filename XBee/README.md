@@ -5,8 +5,13 @@ Il s'agit d'une version légèrement modifiée de la librairie de Samuel-Charles
 #include <robotech/xbee.h>
 using namespace std;
 
+
+void test_alive_callback(const frame_t& frame) {
+    cout << "Test alive reçu de " << frame.adr_emetteur << endl;
+}
+
 int main() {
-    XBee xbee;
+    XBee xbee("/dev/ttyUSB0", XB_ADR_ROBOT_1);
     int status = xbee.openSerialConnection();
 
     if (status != XB_SER_E_SUCCESS) {
@@ -14,8 +19,9 @@ int main() {
         return status;
     }
 
+    // Alternative : xbee.subscribe(XB_FCT_TEST_ALIVE, test_alive_callback);
     xbee.subscribe(XB_FCT_TEST_ALIVE, [&](const frame_t& frame) {
-         xbee.sendFrame(frame.adr_emetteur, frame.code_fct, frame.data, frame.data_len);
+         cout << "Test alive reçu de " << frame.adr_emetteur << endl;
     });
 
     thread listen_thread(&XBee::listen, &xbee);
