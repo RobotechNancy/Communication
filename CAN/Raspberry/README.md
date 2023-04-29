@@ -41,7 +41,7 @@ pkg_check_modules(CAN REQUIRED CAN)
 
 # Ajoutez tous vos fichiers source dans "add_executable"
 add_executable(${PROJECT_NAME} main.cpp)
-target_link_libraries(${PROJECT_NAME} ${LOGS_LIBRARIES} ${CAN_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${CAN_LIBRARIES})
 ```
 
 ## Bus CAN réel

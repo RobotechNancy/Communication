@@ -66,7 +66,7 @@ pkg_check_modules(XBEE REQUIRED XBee)
 
 # Ajoutez tous vos fichiers source dans "add_executable"
 add_executable(${PROJECT_NAME} src/main.cpp)
-target_link_libraries(${PROJECT_NAME} ${LOGS_LIBRARIES} ${XBEE_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${XBEE_LIBRARIES})
 ```
 
 ## Câblage des modules XBee avec la RaspberryPi
