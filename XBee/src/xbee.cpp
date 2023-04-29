@@ -329,26 +329,26 @@ void XBee::subscribe(uint32_t fct_code, const message_callback& callback) {
  *  @brief Attendre, vérifier et traiter une trame reçue
  */
 [[noreturn]] void XBee::listen() {
-    vector<int> response;
+    vector<uint8_t> response;
 
     while (true) {
         response.clear();
         this_thread::sleep_for(chrono::milliseconds(10));
 
         if (serial.available() > 0) {
-            readRx<vector<int>>(response);
+            readRx<vector<uint8_t>>(response);
             processResponse(response);
         }
     }
 }
 
 
-int XBee::processResponse(const vector<int> &response) {
-    vector<int> buffer{};
+int XBee::processResponse(const vector<uint8_t> &response) {
+    vector<uint8_t> buffer{};
     int status = -1;
     logger << "(process trame) trame reçue" << mendl;
 
-    for (int i : response) {
+    for (int i: response) {
         buffer.push_back(i);
 
         if (i == XB_V_END) {
@@ -376,7 +376,7 @@ int XBee::processResponse(const vector<int> &response) {
  *  @return -206 La séquence de début est incorrecte
  *  @return -207 La longueur de données est incorrecte
  */
-int XBee::processSubFrame(vector<int> &recv_msg) {
+int XBee::processSubFrame(vector<uint8_t> &recv_msg) {
     int data_len = recv_msg[5] - XB_V_SEQ_SHIFT;
     printFrame(recv_msg, data_len);
 
@@ -421,7 +421,7 @@ int XBee::processSubFrame(vector<int> &recv_msg) {
  *  @return 200 Succès
  *  @return -203 La trame n'est pas adressé au module
  */
-int XBee::processFrame(vector<int> recv_frame) {
+int XBee::processFrame(vector<uint8_t> recv_frame) {
     if (module_addr != recv_frame[2])
         return XB_TRAME_E_WRONG_ADR;
 
@@ -433,7 +433,7 @@ int XBee::processFrame(vector<int> recv_frame) {
             .id_trame_high = recv_frame[4],
             .data_len = recv_frame[5],
             .code_fct = recv_frame[6],
-            .data = vector<int>{},
+            .data = vector<uint8_t>{},
             .crc_low = recv_frame[7 + recv_frame[5]],
             .crc_high = recv_frame[8 + recv_frame[5]],
             .end_seq = recv_frame[9 + recv_frame[5]]
