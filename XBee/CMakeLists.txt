@@ -9,7 +9,7 @@ add_library(${PROJECT_NAME}
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 1)
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "include/xbee.h;include/xbee_vars.h;include/serialib.h")
+set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "include/xbee.h;include/xbee_vars.h")
 
 target_include_directories(${PROJECT_NAME} PRIVATE include)
 target_include_directories(${PROJECT_NAME} PRIVATE src)
