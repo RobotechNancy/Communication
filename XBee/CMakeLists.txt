@@ -12,12 +12,13 @@ add_library(${PROJECT_NAME}
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 1)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "include/xbee.h;include/xbee_vars.h")
+set_target_properties(${PROJECT_NAME} PROPERTIES PRIVATE_HEADER "include/serialib.h")
 
 find_package(PkgConfig)
 find_package(Threads REQUIRED)
 pkg_check_modules(Logs REQUIRED Logs)
 
-target_include_directories(${PROJECT_NAME} PRIVATE include src)
+target_include_directories(${PROJECT_NAME} PRIVATE src include)
 target_include_directories(${PROJECT_NAME} PUBLIC ${Logs_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${Logs_LIBRARIES} Threads::Threads)
 

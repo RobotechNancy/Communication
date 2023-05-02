@@ -44,7 +44,7 @@ typedef struct {
 } frame_t;
 
 // Type d'une fonction qui gère un code fonction
-typedef std::function<void(const frame_t&)> message_callback;
+typedef std::function<void(const frame_t&)> xbee_callback;
 
 
 /*!  @class  XBee
@@ -55,20 +55,20 @@ public:
     explicit XBee(const char* port, uint8_t addr);
     ~XBee() = default;
 
+    Logger logger;
     int openSerialConnection();
     void closeSerialConnection();
 
     [[noreturn]] void listen();
-    void subscribe(uint32_t fct_code, const message_callback& callback);
+    void subscribe(uint32_t fct_code, const xbee_callback& callback);
     int sendFrame(uint8_t dest, uint8_t fct_code, const std::vector<uint8_t>& data, int data_len = 1);
 private:
     serialib serial;
-    Logger logger;
 
     int nb_trame = 0;
     uint8_t module_addr;
     const char* module_port;
-    std::map<uint32_t, message_callback> listeners;
+    std::map<uint32_t, xbee_callback> listeners;
 
     bool enterATMode();
     bool exitATMode();
