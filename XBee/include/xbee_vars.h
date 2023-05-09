@@ -28,8 +28,9 @@
 #define XB_V_ACK 0x06
 #define XB_V_SEQ_SHIFT 4
 
-#define XB_FCT_TEST_ALIVE 0x07
-#define XB_FCT_ARUCO_POS  0x08
+#define XB_FCT_TEST_ALIVE     0x07
+#define XB_FCT_GET_ARUCO_POS  0x08
+#define XB_FCT_ARUCO_POS      0x09
 
 
 // Code d'erreurs
