@@ -59,7 +59,8 @@ public:
     int openSerialConnection();
     void closeSerialConnection();
 
-    [[noreturn]] void listen();
+    void start_listen();
+    static void delay(float seconds);
     void subscribe(uint32_t fct_code, const xbee_callback& callback);
     int sendFrame(uint8_t dest, uint8_t fct_code, const std::vector<uint8_t>& data, int data_len = 1);
 private:
@@ -68,6 +69,8 @@ private:
     int nb_trame = 0;
     uint8_t module_addr;
     const char* module_port;
+
+    std::thread *listen_thread;
     std::map<uint32_t, xbee_callback> listeners;
 
     bool enterATMode();
@@ -77,6 +80,7 @@ private:
     bool readATResponse(const char *value = XB_AT_R_EMPTY, int mode = 0);
     bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
 
+    [[noreturn]] void listen();
     int processResponse(const std::vector<uint8_t> &response);
     int processSubFrame(std::vector<uint8_t> &recv_msg);
     int processFrame(std::vector<uint8_t> recv_frame);
@@ -86,7 +90,6 @@ private:
     static bool validateCRC(uint8_t crc_low, uint8_t crc_high, int frame[], int frame_len);
 
     template<typename T> void readRx(T &buffer);
-    static void delay(float seconds);
 };
 
 #endif // XBEE_H

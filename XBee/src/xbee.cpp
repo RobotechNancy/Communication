@@ -14,7 +14,7 @@ using namespace std;
 // Configuration et initialisation
 
 XBee::XBee(const char* port, uint8_t addr):
-        module_port(port), module_addr(addr), logger("xbee") {}
+        module_port(port), module_addr(addr), logger("xbee"), listen_thread(nullptr) {}
 
 /*!
  *  @brief  Nettoyer le buffer et ouvrir la connexion UART
@@ -322,6 +322,16 @@ bool XBee::writeATConfig() {
  */
 void XBee::subscribe(uint32_t fct_code, const xbee_callback& callback) {
     listeners.insert(std::make_pair(fct_code, callback));
+}
+
+
+/*!
+ * @brief Démarrer un thread d'écoute des trames reçues
+ */
+void XBee::start_listen() {
+    listen_thread = new thread;
+    *listen_thread = thread(&XBee::listen, this);
+    logger << "Thread d'écoute du XBee démarré" << mendl;
 }
 
 

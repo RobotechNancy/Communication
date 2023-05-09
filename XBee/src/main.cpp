@@ -24,8 +24,8 @@ int main() {
          xbee.sendFrame(frame.adr_emetteur, frame.code_fct, frame.data, frame.data_len);
     });
 
-    thread listen_thread(&XBee::listen, &xbee);
-    this_thread::sleep_for(chrono::seconds(3600));
+    xbee.start_listen();
+    XBee::delay(60);
 
     xbee.closeSerialConnection();
     return XB_E_SUCCESS;

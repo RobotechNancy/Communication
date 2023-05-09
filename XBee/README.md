@@ -24,8 +24,8 @@ int main() {
          cout << "Test alive reçu de " << frame.adr_emetteur << endl;
     });
 
-    thread listen_thread(&XBee::listen, &xbee);
-    this_thread::sleep_for(chrono::seconds(3600));
+    xbee.start_listen();
+    XBee::delay(60);
 
     xbee.closeSerialConnection();
     return XB_E_SUCCESS;
