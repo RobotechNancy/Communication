@@ -14,7 +14,7 @@ using namespace std;
 // Configuration et initialisation
 
 XBee::XBee(const char* port, uint8_t addr):
-        module_port(port), module_addr(addr), logger("xbee"), listen_thread(nullptr) {}
+        module_port(port), module_addr(addr), logger("xbee") {}
 
 /*!
  *  @brief  Nettoyer le buffer et ouvrir la connexion UART
@@ -43,7 +43,7 @@ int XBee::openSerialConnection() {
     }
 
     logger << "(serial) connexion ouverte avec succès sur le port " << module_port
-            << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parité : " << XB_PARITY_PRIMARY << mendl;
+           << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parité : " << XB_PARITY_PRIMARY << mendl;
 
     if ((status = checkATConfig()) < 0)
         return status;
@@ -320,18 +320,8 @@ bool XBee::writeATConfig() {
  * @param fct_code Le code fonction à écouter
  * @param callback La fonction à exécuter
  */
-void XBee::subscribe(uint32_t fct_code, const xbee_callback& callback) {
+void XBee::subscribe(uint32_t fct_code, const message_callback& callback) {
     listeners.insert(std::make_pair(fct_code, callback));
-}
-
-
-/*!
- * @brief Démarrer un thread d'écoute des trames reçues
- */
-void XBee::start_listen() {
-    listen_thread = new thread;
-    *listen_thread = thread(&XBee::listen, this);
-    logger << "Thread d'écoute du XBee démarré" << mendl;
 }
 
 
@@ -339,26 +329,26 @@ void XBee::start_listen() {
  *  @brief Attendre, vérifier et traiter une trame reçue
  */
 [[noreturn]] void XBee::listen() {
-    vector<uint8_t> response;
+    vector<int> response;
 
     while (true) {
         response.clear();
         this_thread::sleep_for(chrono::milliseconds(10));
 
         if (serial.available() > 0) {
-            readRx<vector<uint8_t>>(response);
+            readRx<vector<int>>(response);
             processResponse(response);
         }
     }
 }
 
 
-int XBee::processResponse(const vector<uint8_t> &response) {
-    vector<uint8_t> buffer{};
+int XBee::processResponse(const vector<int> &response) {
+    vector<int> buffer{};
     int status = -1;
     logger << "(process trame) trame reçue" << mendl;
 
-    for (int i: response) {
+    for (int i : response) {
         buffer.push_back(i);
 
         if (i == XB_V_END) {
@@ -386,7 +376,7 @@ int XBee::processResponse(const vector<uint8_t> &response) {
  *  @return -206 La séquence de début est incorrecte
  *  @return -207 La longueur de données est incorrecte
  */
-int XBee::processSubFrame(vector<uint8_t> &recv_msg) {
+int XBee::processSubFrame(vector<int> &recv_msg) {
     int data_len = recv_msg[5] - XB_V_SEQ_SHIFT;
     printFrame(recv_msg, data_len);
 
@@ -431,7 +421,7 @@ int XBee::processSubFrame(vector<uint8_t> &recv_msg) {
  *  @return 200 Succès
  *  @return -203 La trame n'est pas adressé au module
  */
-int XBee::processFrame(vector<uint8_t> recv_frame) {
+int XBee::processFrame(vector<int> recv_frame) {
     if (module_addr != recv_frame[2])
         return XB_TRAME_E_WRONG_ADR;
 
@@ -443,7 +433,7 @@ int XBee::processFrame(vector<uint8_t> recv_frame) {
             .id_trame_high = recv_frame[4],
             .data_len = recv_frame[5],
             .code_fct = recv_frame[6],
-            .data = vector<uint8_t>{},
+            .data = vector<int>{},
             .crc_low = recv_frame[7 + recv_frame[5]],
             .crc_high = recv_frame[8 + recv_frame[5]],
             .end_seq = recv_frame[9 + recv_frame[5]]
@@ -451,7 +441,7 @@ int XBee::processFrame(vector<uint8_t> recv_frame) {
 
     for (int i = 0; i < frame.data_len; i++)
         frame.data.push_back(recv_frame[7 + i]);
-    
+
     if (listeners.contains(frame.code_fct))
         listeners[frame.code_fct](frame);
     else
@@ -469,7 +459,7 @@ int XBee::processFrame(vector<uint8_t> recv_frame) {
  *  @return 200 Succès
  *  @return -205 La taille des données est trop grande
  */
-int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<uint8_t>& data, int data_len) {
+int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<int>& data, int data_len) {
     if (data_len > 255) {
         logger << "/!\\ (send frame) erreur " << XB_TRAME_E_DATALEN << " : taille des données trop grande" << mendl;
         return XB_TRAME_E_DATALEN;
@@ -509,7 +499,7 @@ int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<uint8_t>& data,
     printFrame<uint8_t*>(frame, data_len);
     serial.writeBytes(frame, frame_len);
     logger << "(sendFrame) envoi de la frame n°" << dec << frame_id_low + frame_id_high
-                                                 << " effectué avec succès" << mendl;
+           << " effectué avec succès" << mendl;
 
     return XB_TRAME_E_SUCCESS;
 }

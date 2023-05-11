@@ -12,7 +12,7 @@ using namespace std;
 
 
 int main() {
-    XBee xbee("/dev/ttyS0", XB_ADR_CAMERA_01);
+    XBee xbee("/dev/ttyUSB0", XB_ADR_ROBOT_01);
     int status = xbee.openSerialConnection();
 
     if (status != XB_SER_E_SUCCESS) {
@@ -21,11 +21,18 @@ int main() {
     }
 
     xbee.subscribe(XB_FCT_TEST_ALIVE, [&](const frame_t& frame) {
-         xbee.sendFrame(frame.adr_emetteur, frame.code_fct, frame.data, frame.data_len);
+        cout << "Réception d'un message de test de la part de " << frame.adr_emetteur << endl;
     });
 
-    xbee.start_listen();
-    XBee::delay(60);
+    xbee.subscribe(XB_FCT_ARUCO_POS, [&](const frame_t& frame) {
+         cout << "Tags détectés : " << endl;
+         for (int i=0; i < frame.data_len; i += 4) {
+             cout << "\twTag " << frame.data[i] << " : Tx=" << frame.data[i+1] << " Ty=" << frame.data[i+2] << " Rz=" << frame.data[i+3] << endl;
+         }
+    });
+
+    thread listen(&XBee::listen, &xbee);
+    XBee::delay(3600);
 
     xbee.closeSerialConnection();
     return XB_E_SUCCESS;
