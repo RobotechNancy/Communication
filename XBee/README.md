@@ -21,11 +21,11 @@ int main() {
 
     // Alternative : xbee.subscribe(XB_FCT_TEST_ALIVE, test_alive_callback);
     xbee.subscribe(XB_FCT_TEST_ALIVE, [&](const frame_t& frame) {
-         cout << "Test alive reçu de " << frame.adr_emetteur << endl;
+         cout << "Test alive reçu de " << (int) frame.adr_emetteur << endl;
     });
 
     xbee.start_listen();
-    XBee::delay(60);
+    while (cin.get() == 'q'); // Attendre la touche 'q' pour quitter
 
     xbee.closeSerialConnection();
     return XB_E_SUCCESS;
