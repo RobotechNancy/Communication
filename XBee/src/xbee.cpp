@@ -8,6 +8,8 @@
  */
 
 #include "xbee.h"
+
+#include <memory>
 using namespace std;
 
 
@@ -315,6 +317,11 @@ bool XBee::writeATConfig() {
 
 // Envoi/Réception/Traitement des trames de messages
 
+
+void XBee::start_listen() {
+    listen_thread = std::make_unique<thread>(&XBee::listen, this);
+    logger << "Thread de réception des trames démarré" << mendl;
+}
 
 /*!
  * @brief Lier un code fonction à une fonction

@@ -11,6 +11,7 @@
 #define RASPBERRY_H
 
 #include <map>
+#include <memory>
 #include <thread>
 #include <cstring>
 #include <unistd.h>
@@ -37,18 +38,21 @@ typedef std::function<void(const can_mess_t&)> can_callback;
 class Can {
 private:
     int sock;
-    std::thread *listen_thread;
+    std::unique_ptr<std::thread> listen_thread;
     std::map<uint32_t, can_callback> listeners;
 
     [[noreturn]] void listen();
     int format_frame(can_mess_t &response, can_frame& frame) const;
 public:
-    Can();
     Logger logger;
 
+    Can();
     int init(CAN_EMIT_ADDR emit_addr);
+
     void subscribe(uint32_t fct_code, const can_callback& callback);
     void start_listen();
+    void close() const;
+
     int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id);
 };
 

@@ -67,8 +67,7 @@ void Can::subscribe(uint32_t fct_code, const can_callback& callback) {
  * @brief <br>Démarrer un thread d'écoute du bus CAN
  */
 void Can::start_listen() {
-    listen_thread = new thread;
-    *listen_thread = thread(&Can::listen, this);
+    listen_thread = std::make_unique<thread>(&Can::listen, this);
     logger << "Thread d'écoute du CAN démarré" << mendl;
 }
 
@@ -185,4 +184,9 @@ int Can::send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t *data, uint8_t data_
     }
 
     return 0;
+}
+
+
+void Can::close() const {
+    ::close(sock);
 }

@@ -19,6 +19,10 @@ int main() {
 
     can.start_listen();
 
-    while (true);
+    do {
+        std::cout << "Appuyez sur 'q' pour quitter" << std::endl;
+    } while (std::cin.get() != 'q');
+
+    can.close();
     return 0;
 }

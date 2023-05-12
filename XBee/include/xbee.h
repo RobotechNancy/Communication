@@ -11,6 +11,7 @@
 #define XBEE_H
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 #include <iomanip>
@@ -57,9 +58,9 @@ public:
 
     int openSerialConnection();
     void closeSerialConnection();
-
     static void delay(float seconds);
-    [[noreturn]] void listen();
+
+    void start_listen();
     void subscribe(uint8_t fct_code, const message_callback& callback);
     int sendFrame(uint8_t dest, uint8_t fct_code, const std::vector<uint8_t>& data, uint8_t data_len = 1);
 private:
@@ -69,6 +70,8 @@ private:
     int nb_trame = 0;
     uint8_t module_addr;
     const char* module_port;
+
+    std::unique_ptr<std::thread> listen_thread;
     std::map<uint32_t, message_callback> listeners;
 
     bool enterATMode();
@@ -78,6 +81,7 @@ private:
     bool readATResponse(const char *value = XB_AT_R_EMPTY, int mode = 0);
     bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
 
+    [[noreturn]] void listen();
     int processResponse(const std::vector<uint8_t> &response);
     int processSubFrame(std::vector<uint8_t> &recv_msg);
     int processFrame(std::vector<uint8_t> recv_frame);

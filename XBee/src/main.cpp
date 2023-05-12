@@ -24,8 +24,8 @@ int main() {
         cout << "Réception d'un message de test de la part de " << frame.adr_emetteur << endl;
     });
 
-    thread listen(&XBee::listen, &xbee);
-    XBee::delay(3600);
+    xbee.start_listen();
+    while (cin.get() == 'q');
 
     xbee.closeSerialConnection();
     return XB_E_SUCCESS;
