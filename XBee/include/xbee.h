@@ -30,17 +30,17 @@
  * @brief    <br>Format des trames reçues en fonction des paramètres de la trame
  */
 typedef struct {
-    int start_seq;          /*!< Caractère de début de trame */
-    int adr_emetteur;       /*!< Adresse de l'émetteur de la trame */
-    int adr_dest;           /*!< Adresse du destinataire de la trame */
-    int id_trame_low;       /*!< Bits de poids faible de l'ID de la trame */
-    int id_trame_high;      /*!< Bits de poids fort de l'ID de la trame */
-    int data_len;           /*!< Nombre d'octets du champ data + code fonction */
-    int code_fct;           /*!< Code fonction de la trame */
-    std::vector<int > data; /*!< Data de la trame */
-    int crc_low;            /*!< Bits de poids faible du CRC */
-    int crc_high;           /*!< Bits de poids fort du CRC */
-    int end_seq;            /*!< Caractère de fin de trame */
+    uint8_t start_seq;          /*!< Caractère de début de trame */
+    uint8_t adr_emetteur;       /*!< Adresse de l'émetteur de la trame */
+    uint8_t adr_dest;           /*!< Adresse du destinataire de la trame */
+    uint8_t id_trame_low;       /*!< Bits de poids faible de l'ID de la trame */
+    uint8_t id_trame_high;      /*!< Bits de poids fort de l'ID de la trame */
+    uint8_t data_len;           /*!< Nombre d'octets du champ data + code fonction */
+    uint8_t code_fct;           /*!< Code fonction de la trame */
+    std::vector<uint8_t> data; /*!< Data de la trame */
+    uint8_t crc_low;            /*!< Bits de poids faible du CRC */
+    uint8_t crc_high;           /*!< Bits de poids fort du CRC */
+    uint8_t end_seq;            /*!< Caractère de fin de trame */
 } frame_t;
 
 // Type d'une fonction qui gère un code fonction
@@ -60,8 +60,8 @@ public:
 
     static void delay(float seconds);
     [[noreturn]] void listen();
-    void subscribe(uint32_t fct_code, const message_callback& callback);
-    int sendFrame(uint8_t dest, uint8_t fct_code, const std::vector<int>& data, int data_len = 1);
+    void subscribe(uint8_t fct_code, const message_callback& callback);
+    int sendFrame(uint8_t dest, uint8_t fct_code, const std::vector<uint8_t>& data, uint8_t data_len = 1);
 private:
     serialib serial;
     Logger logger;
@@ -78,9 +78,9 @@ private:
     bool readATResponse(const char *value = XB_AT_R_EMPTY, int mode = 0);
     bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
 
-    int processResponse(const std::vector<int> &response);
-    int processSubFrame(std::vector<int> &recv_msg);
-    int processFrame(std::vector<int> recv_frame);
+    int processResponse(const std::vector<uint8_t> &response);
+    int processSubFrame(std::vector<uint8_t> &recv_msg);
+    int processFrame(std::vector<uint8_t> recv_frame);
 
     template<typename T> static void printFrame(const T &frame, int data_len);
     static int computeCRC(const int frame[], uint8_t frame_len);

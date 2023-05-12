@@ -16,10 +16,11 @@
 #define XB_PARITY_PRIMARY SERIAL_PARITY_NONE
 #define XB_STOPBITS_PRIMARY SERIAL_STOPBITS_1
 
-#define XB_ADR_ROBOT_01   1
-#define XB_ADR_ROBOT_02   2
-#define XB_ADR_CAMERA_01  3
-#define XB_ADR_CAMERA_02  4
+// Les adresses doivent être comprises entre 4 et 255 (0x04 et 0xFF)
+#define XB_ADR_ROBOT_01   4
+#define XB_ADR_ROBOT_02   5
+#define XB_ADR_CAMERA_01  6
+#define XB_ADR_CAMERA_02  7
 
 
 // Paramètres de la trame message

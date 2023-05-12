@@ -24,13 +24,6 @@ int main() {
         cout << "Réception d'un message de test de la part de " << frame.adr_emetteur << endl;
     });
 
-    xbee.subscribe(XB_FCT_ARUCO_POS, [&](const frame_t& frame) {
-         cout << "Tags détectés : " << endl;
-         for (int i=0; i < frame.data_len; i += 4) {
-             cout << "\twTag " << frame.data[i] << " : Tx=" << frame.data[i+1] << " Ty=" << frame.data[i+2] << " Rz=" << frame.data[i+3] << endl;
-         }
-    });
-
     thread listen(&XBee::listen, &xbee);
     XBee::delay(3600);
 

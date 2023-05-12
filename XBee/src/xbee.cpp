@@ -216,6 +216,7 @@ int XBee::checkATConfig() {
         return XB_AT_E_EXIT;
     }
 
+    serial.flushReceiver();
     logger << "(config AT) configuration AT réalisée avec succès" << mendl;
     return XB_AT_E_SUCCESS;
 }
@@ -320,7 +321,7 @@ bool XBee::writeATConfig() {
  * @param fct_code Le code fonction à écouter
  * @param callback La fonction à exécuter
  */
-void XBee::subscribe(uint32_t fct_code, const message_callback& callback) {
+void XBee::subscribe(uint8_t fct_code, const message_callback& callback) {
     listeners.insert(std::make_pair(fct_code, callback));
 }
 
@@ -329,26 +330,27 @@ void XBee::subscribe(uint32_t fct_code, const message_callback& callback) {
  *  @brief Attendre, vérifier et traiter une trame reçue
  */
 [[noreturn]] void XBee::listen() {
-    vector<int> response;
+    vector<uint8_t> response;
 
     while (true) {
         response.clear();
         this_thread::sleep_for(chrono::milliseconds(10));
 
         if (serial.available() > 0) {
-            readRx<vector<int>>(response);
+            readRx<vector<uint8_t>>(response);
             processResponse(response);
         }
     }
 }
 
 
-int XBee::processResponse(const vector<int> &response) {
-    vector<int> buffer{};
-    int status = -1;
+int XBee::processResponse(const vector<uint8_t>& response) {
     logger << "(process trame) trame reçue" << mendl;
 
-    for (int i : response) {
+    int status = -1;
+    vector<uint8_t> buffer{};
+
+    for (int i: response) {
         buffer.push_back(i);
 
         if (i == XB_V_END) {
@@ -357,7 +359,7 @@ int XBee::processResponse(const vector<int> &response) {
         }
     }
 
-    if (status == -1) {
+    if (status < 0) {
         logger << "/!\\ (process trame) erreur " << XB_SUBTRAME_E_NONE << " : Aucune sous-trame valide " << mendl;
         return XB_TRAME_E_START;
     }
@@ -376,7 +378,7 @@ int XBee::processResponse(const vector<int> &response) {
  *  @return -206 La séquence de début est incorrecte
  *  @return -207 La longueur de données est incorrecte
  */
-int XBee::processSubFrame(vector<int> &recv_msg) {
+int XBee::processSubFrame(vector<uint8_t> &recv_msg) {
     int data_len = recv_msg[5] - XB_V_SEQ_SHIFT;
     printFrame(recv_msg, data_len);
 
@@ -421,7 +423,7 @@ int XBee::processSubFrame(vector<int> &recv_msg) {
  *  @return 200 Succès
  *  @return -203 La trame n'est pas adressé au module
  */
-int XBee::processFrame(vector<int> recv_frame) {
+int XBee::processFrame(vector<uint8_t> recv_frame) {
     if (module_addr != recv_frame[2])
         return XB_TRAME_E_WRONG_ADR;
 
@@ -433,7 +435,7 @@ int XBee::processFrame(vector<int> recv_frame) {
             .id_trame_high = recv_frame[4],
             .data_len = recv_frame[5],
             .code_fct = recv_frame[6],
-            .data = vector<int>{},
+            .data = vector<uint8_t>{},
             .crc_low = recv_frame[7 + recv_frame[5]],
             .crc_high = recv_frame[8 + recv_frame[5]],
             .end_seq = recv_frame[9 + recv_frame[5]]
@@ -455,11 +457,11 @@ int XBee::processFrame(vector<int> recv_frame) {
  *  @brief  Envoyer une trame structurée via UART au XBee
  *  @param  dest L'adresse du destinataire du message
  *  @param  fct_code Le code de la fonction concernée par le message
- *  @param  data Les valeurs des paramètres demandées par le code fonction
+ *  @param  data Les valeurs des paramètres demandées par le code fonctionsendFram
  *  @return 200 Succès
  *  @return -205 La taille des données est trop grande
  */
-int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<int>& data, int data_len) {
+int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<uint8_t>& data, uint8_t data_len) {
     if (data_len > 255) {
         logger << "/!\\ (send frame) erreur " << XB_TRAME_E_DATALEN << " : taille des données trop grande" << mendl;
         return XB_TRAME_E_DATALEN;
