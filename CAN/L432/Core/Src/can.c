@@ -6,13 +6,10 @@
  ******************************************************************************
  */
 
-#include <memory.h>
 #include "can.h"
 
-extern graph_state_t state;
-extern CAN_HandleTypeDef hcan1;
 
-void configure_CAN(CAN_HandleTypeDef hcan, CAN_EMIT_ADDR addr) {
+void configure_CAN(CAN_HandleTypeDef *hcan, CAN_EMIT_ADDR addr) {
     CAN_FilterTypeDef sFilterConfig;
 
     sFilterConfig.FilterMode =           CAN_FILTERMODE_IDMASK; // Filtrage par liste ou par masque
@@ -27,10 +24,10 @@ void configure_CAN(CAN_HandleTypeDef hcan, CAN_EMIT_ADDR addr) {
     sFilterConfig.FilterIdHigh =         addr >> 9;             // Adresse de l'émetteur
     sFilterConfig.FilterIdLow =          0b111100000000000;     // Adresse de broadcast
 
-    HAL_CAN_ConfigFilter(&hcan, &sFilterConfig);
+    HAL_CAN_ConfigFilter(hcan, &sFilterConfig);
 
-    HAL_CAN_Start(&hcan); // Démarrer le périphérique CAN
-    HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING); // Activer le mode interruption
+    HAL_CAN_Start(hcan); // Démarrer le périphérique CAN
+    HAL_CAN_ActivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING); // Activer le mode interruption
 }
 
 
@@ -46,10 +43,6 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
         return;
 
     switch (msg.fct_code) {
-        case FCT_CHANGEMENT_ETAT:
-            state.len = msg.data_len;
-            memcpy(state.data, msg.data, msg.data_len);
-            break;
         default:
             break;
     }
@@ -82,7 +75,7 @@ int format_frame(can_mess_t *rep, CAN_RxHeaderTypeDef frame, const uint8_t data[
 }
 
 
-int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id){
+int send(CAN_HandleTypeDef *hcan, CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id) {
 	if (data_len > 8)
 		return CAN_E_DATA_SIZE_TOO_LONG;
 
@@ -98,7 +91,7 @@ int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len,
 	txHeader.TransmitGlobalTime = DISABLE;
 
 	uint32_t TxMailbox;
-	HAL_CAN_AddTxMessage(&hcan1, &txHeader, data, &TxMailbox);
+	HAL_CAN_AddTxMessage(hcan, &txHeader, data, &TxMailbox);
 
 	return 0;
 }
