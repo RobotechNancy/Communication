@@ -10,7 +10,7 @@
 #ifndef CAN_CAN_VARS_H
 #define CAN_CAN_VARS_H
 
-#include <cstdint>
+#include <stdint.h>
 
 
 #define CAN_BUS_NAME "vcan0"
