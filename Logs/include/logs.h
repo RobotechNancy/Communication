@@ -36,7 +36,7 @@ private:
 
     void logStream();
 public:
-    explicit Logger(std::string  logger_name, const std::string& logger_path = "../logs.log");
+    explicit Logger(std::string  logger_name, const std::string& logger_path = "logs.log");
 
     friend Logger& operator<<(Logger& logger, const Mendl& _) {
         logger.logStream();
