@@ -15,8 +15,7 @@ using namespace std;
 
 // Configuration et initialisation
 
-XBee::XBee(const char* port, uint8_t addr):
-        module_port(port), module_addr(addr), logger("xbee") {}
+XBee::XBee(): logger("xbee"), module_addr() {}
 
 /*!
  *  @brief  Nettoyer le buffer et ouvrir la connexion UART
@@ -32,7 +31,9 @@ XBee::XBee(const char* port, uint8_t addr):
  *  @return -508 Stopbits non reconnus
  *  @return -509 Parité non reconnue
  */
-int XBee::openSerialConnection() {
+int XBee::openSerialConnection(const char* module_port, uint8_t addr) {
+    module_addr = addr;
+
     int status = serial.openDevice(
             module_port, XB_BAUDRATE_PRIMARY, XB_DATABITS_PRIMARY, XB_PARITY_PRIMARY, XB_STOPBITS_PRIMARY
     );
