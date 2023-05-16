@@ -58,7 +58,7 @@ int Can::init(CAN_EMIT_ADDR emit_addr) {
  * @param fct_code Le code fonction à écouter
  * @param callback La fonction à exécuter
  */
-void Can::subscribe(uint32_t fct_code, const can_callback& callback) {
+void Can::subscribe(uint32_t fct_code, const can_callback_t& callback) {
     listeners.insert(std::make_pair(fct_code, callback));
 }
 

@@ -29,7 +29,7 @@
 
 
 // Type d'une fonction qui gère un code fonction
-typedef std::function<void(const can_mess_t&)> can_callback;
+typedef std::function<void(const can_mess_t&)> can_callback_t;
 
 /*!
  * @class Can
@@ -39,7 +39,7 @@ class Can {
 private:
     int sock;
     std::unique_ptr<std::thread> listen_thread;
-    std::map<uint32_t, can_callback> listeners;
+    std::map<uint32_t, can_callback_t> listeners;
 
     [[noreturn]] void listen();
     int format_frame(can_mess_t &response, can_frame& frame) const;
@@ -49,7 +49,7 @@ public:
     Can();
     int init(CAN_EMIT_ADDR emit_addr);
 
-    void subscribe(uint32_t fct_code, const can_callback& callback);
+    void subscribe(uint32_t fct_code, const can_callback_t& callback);
     void start_listen();
     void close() const;
 

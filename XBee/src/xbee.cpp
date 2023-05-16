@@ -329,7 +329,7 @@ void XBee::start_listen() {
  * @param fct_code Le code fonction à écouter
  * @param callback La fonction à exécuter
  */
-void XBee::subscribe(uint8_t fct_code, const message_callback& callback) {
+void XBee::subscribe(uint8_t fct_code, const xbee_callback_t& callback) {
     listeners.insert(std::make_pair(fct_code, callback));
 }
 
