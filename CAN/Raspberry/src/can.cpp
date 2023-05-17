@@ -11,7 +11,7 @@
 using namespace std;
 
 
-Can::Can(CAN_EMIT_ADDR emit_addr) :
+Can::Can(::uint32_t emit_addr) :
     sock(0),
     logger("can"),
     listen_thread(),

@@ -47,7 +47,7 @@ public:
     uint8_t emit_addr;
     Logger logger;
 
-    explicit Can(CAN_EMIT_ADDR emit_addr);
+    explicit Can(uint32_t emit_addr);
     int init();
 
     void subscribe(uint32_t fct_code, const can_callback_t& callback);
