@@ -44,10 +44,11 @@ private:
     [[noreturn]] void listen();
     int format_frame(can_mess_t &response, can_frame& frame) const;
 public:
+    uint8_t emit_addr;
     Logger logger;
 
-    Can();
-    int init(CAN_EMIT_ADDR emit_addr);
+    explicit Can(CAN_EMIT_ADDR emit_addr);
+    int init();
 
     void subscribe(uint32_t fct_code, const can_callback_t& callback);
     void start_listen();

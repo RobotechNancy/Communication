@@ -11,10 +11,11 @@
 using namespace std;
 
 
-Can::Can():
+Can::Can(CAN_EMIT_ADDR emit_addr) :
     sock(0),
     logger("can"),
-    listen_thread()
+    listen_thread(),
+    emit_addr(emit_addr)
 {}
 
 
@@ -23,7 +24,7 @@ Can::Can():
  * @param  emit_addr L'adresse de réception de la carte
  * @return 0 ou un code d'erreur
  */
-int Can::init(CAN_EMIT_ADDR emit_addr) {
+int Can::init() {
     ifreq ifr{};
     sockaddr_can addr{};
 
@@ -158,11 +159,11 @@ int Can::send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t *data, uint8_t data_
 
     can_frame frame{};
     frame.can_dlc = data_len;
-    frame.can_id = (uint8_t) addr | CAN_ADDR_RASPBERRY_E | fct_code | rep_len | msg_id << CAN_DECALAGE_ID_MSG | is_rep << CAN_DECALAGE_IS_REP | CAN_EFF_FLAG;
+    frame.can_id = (uint8_t) addr | emit_addr | fct_code | rep_len | msg_id << CAN_DECALAGE_ID_MSG | is_rep << CAN_DECALAGE_IS_REP | CAN_EFF_FLAG;
 
     logger << "SEND: ";
     logger << "   recv_addr : " << hex << showbase << addr;
-    logger << "   emit_addr : " << CAN_ADDR_RASPBERRY_E;
+    logger << "   emit_addr : " << emit_addr;
     logger << "   fct_code : " << fct_code;
     logger << "   rep_id : " << msg_id;
     logger << "   is_rep : " << is_rep;

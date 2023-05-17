@@ -40,11 +40,14 @@
  * @details 0x?000000 ou bits 23 à 26
  */
 typedef enum {
-    CAN_ADDR_RASPBERRY =        0x1000000,
-    CAN_ADDR_BASE_ROULANTE =    0x2000000,
-    CAN_ADDR_ODOMETRIE =        0x3000000,
-    CAN_ADDR_ACTIONNEUR =       0x4000000,
-	CAN_ADDR_ODOMETRIE_TOF =    0x5000000,
+    CAN_ADDR_ROBOT_01 =         0x1000000,
+    CAN_ADDR_ROBOT_02 =         0x2000000,
+    CAN_ADDR_BASE_ROULANTE =    0x3000000,
+    CAN_ADDR_ODOMETRIE =        0x4000000,
+    CAN_ADDR_ACTIONNEUR =       0x5000000,
+	CAN_ADDR_ODOMETRIE_TOF =    0x6000000,
+    CAN_ADDR_ACTIONNEUR_PETIT = 0x7000000,
+    CAN_ADDR_ACTIONNEUR_GROS  = 0x8000000,
     CAN_ADDR_BROADCAST =        0xF000000,
 } CAN_ADDR;
 
@@ -56,12 +59,15 @@ typedef enum {
  * @details 0x?00000 ou bits 20 à 23
  */
 typedef enum {
-    CAN_ADDR_RASPBERRY_E =      0x100000,
-    CAN_ADDR_BASE_ROULANTE_E =  0x200000,
-    CAN_ADDR_ODOMETRIE_E =      0x300000,
-    CAN_ADDR_ACTIONNEUR_E =     0x400000,
-	CAN_ADDR_ODOMETRIE_TOF_E =  0x500000,
-    CAN_ADDR_BROADCAST_E =      0xF00000,
+    CAN_ADDR_ROBOT_01_E =         0x100000,
+    CAN_ADDR_ROBOT_02_E =         0x200000,
+    CAN_ADDR_BASE_ROULANTE_E =    0x300000,
+    CAN_ADDR_ODOMETRIE_E =        0x400000,
+    CAN_ADDR_ACTIONNEUR_E =       0x500000,
+	CAN_ADDR_ODOMETRIE_TOF_E =    0x600000,
+    CAN_ADDR_ACTIONNEUR_PETIT_E = 0x700000,
+    CAN_ADDR_ACTIONNEUR_GROS_E  = 0x800000,
+    CAN_ADDR_BROADCAST_E =        0xF00000,
 } CAN_EMIT_ADDR;
 
 
@@ -69,16 +75,21 @@ typedef enum {
  * @enum    CAN_FCT_CODE
  * @brief   Codes fonction
  * @example FCT_AVANCE = 0x010000
- * @details 0x??000 ou bits 12 à 19
+ * @details 0x??00 ou bits 12 à 19
  */
 typedef enum {
     FCT_AVANCE =                        0x01000,
-    FCT_REP_AVANCE =                    0x81000,
-    FCT_CHANGEMENT_ETAT =               0x09000,
-    FCT_DETECTION_TOF =                 0x31000,
+    FCT_REP_AVANCE =                    0x02000,
+
+    FCT_ASPIRER_BALLE =                 0x11000,
+    FCT_PLACER_BALLE =                  0x12000,
+    FCT_OUVRIR_PANIER =                 0x13000,
+    FCT_FERMER_PANIER =                 0x14000,
+
     FCT_GET_VARIATION_XY =              0x32000,
-	FCT_TOF_WCOLLISION = 				0x51000,
-    FCT_GET_OPTIQUE =                   0xa1000,
+    FCT_GET_OPTIQUE =                   0x33000,
+
+    FCT_TOF_WCOLLISION = 				0x0f000,
     FCT_ACCUSER_RECPETION =				0xff000,
 } CAN_FCT_CODE;
 
