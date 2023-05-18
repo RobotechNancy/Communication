@@ -79,6 +79,10 @@ typedef enum {
     FCT_PLACER_BALLE =                  0x12000,
     FCT_OUVRIR_PANIER =                 0x13000,
     FCT_FERMER_PANIER =                 0x14000,
+    FCT_BAISSER_CREMAILLERE =           0x15000,
+    FCT_MONTER_CREMAILLERE =            0x16000,
+    FCT_ATTRAPER_GATEAU =               0x17000,
+    FCT_LACHER_GATEAU =                 0x18000,
 
     FCT_GET_VARIATION_XY =              0x32000,
     FCT_GET_OPTIQUE =                   0x33000,
