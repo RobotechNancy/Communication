@@ -15,6 +15,7 @@ Can::Can(::uint32_t emit_addr) :
     sock(0),
     logger("can"),
     listen_thread(),
+    is_listening(false),
     emit_addr(emit_addr)
 {}
 
@@ -65,20 +66,21 @@ void Can::subscribe(uint32_t fct_code, const can_callback_t& callback) {
 
 
 /*!
- * @brief <br>Démarrer un thread d'écoute du bus CAN
+ * @brief Démarrer un thread d'écoute du bus CAN
  */
 void Can::start_listen() {
+    is_listening = true;
     listen_thread = std::make_unique<thread>(&Can::listen, this);
     logger << "Thread d'écoute du CAN démarré" << mendl;
 }
 
 
-[[noreturn]] void Can::listen() {
+void Can::listen() {
     int err;
     can_frame frame{};
     can_mess_t response;
 
-    while(true) {
+    while(is_listening) {
         if((err = format_frame(response, frame)) < 0){
             logger << "Erreur dans le décodage d'une trame (err n°" << dec << err << ")" << mendl;
             continue;
@@ -97,6 +99,11 @@ void Can::start_listen() {
 
         logger << mendl;
 
+        if (response.is_rep) {
+            responses[response.rep_id] = response;
+            continue;
+        }
+
         if (listeners.contains(response.fct_code)) {
             listeners[response.fct_code](response);
             continue;
@@ -104,6 +111,24 @@ void Can::start_listen() {
 
         logger << "Code fonction non traité : " << hex << showbase << response.fct_code << mendl;
     }
+}
+
+
+/*!
+ * @brief Attendre jusqu'à ce qu'une réponse soit reçue
+ * @param rep_id L'identifiant de la réponse
+ * @param timeout Le temps d'attente maximal (en ms)
+ * @return 0 ou un code d'erreur
+ */
+int Can::wait_for_response(uint8_t rep_id, uint32_t timeout) const {
+    auto start = chrono::steady_clock::now();
+
+    while (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count() < timeout) {
+        if (responses.contains(rep_id))
+            return 0;
+    }
+
+    return CAN_E_TIMEOUT;
 }
 
 
@@ -141,7 +166,7 @@ int Can::format_frame(can_mess_t &response, can_frame& frame) const {
 
 
 /*!
- * @brief  <br>Envoyer un message sur le bus CAN
+ * @brief  Envoyer un message sur le bus CAN
  * @param  addr L'adresse du récepteur
  * @param  fct_code Le code fonction
  * @param  data Les données à envoyer
@@ -188,6 +213,8 @@ int Can::send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t *data, uint8_t data_
 }
 
 
-void Can::close() const {
+void Can::close() {
     ::close(sock);
+    is_listening = false;
+    listen_thread->join();
 }

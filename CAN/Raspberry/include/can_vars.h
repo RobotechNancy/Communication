@@ -116,6 +116,7 @@ typedef struct {
 #define CAN_E_READ_ERROR (-502)
 #define CAN_E_SOCKET_ERROR (-503)
 #define CAN_E_BIND_ERROR (-504)
+#define CAN_E_TIMEOUT (-505)
 
 #define CAN_E_DATA_SIZE_TOO_LONG (-510)
 #define CAN_E_OOB_ADDR (-511)

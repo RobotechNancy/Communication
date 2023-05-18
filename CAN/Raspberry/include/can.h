@@ -41,18 +41,21 @@ private:
     std::unique_ptr<std::thread> listen_thread;
     std::map<uint32_t, can_callback_t> listeners;
 
-    [[noreturn]] void listen();
+    void listen();
     int format_frame(can_mess_t &response, can_frame& frame) const;
 public:
-    uint8_t emit_addr;
     Logger logger;
+    uint8_t emit_addr;
+    std::atomic<bool> is_listening;
+    std::map<uint8_t, can_mess_t> responses;
 
     explicit Can(uint32_t emit_addr);
     int init();
 
     void subscribe(uint32_t fct_code, const can_callback_t& callback);
     void start_listen();
-    void close() const;
+    int wait_for_response(uint8_t rep_id, uint32_t timeout) const;
+    void close();
 
     int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id);
 };
