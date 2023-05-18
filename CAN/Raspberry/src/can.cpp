@@ -118,17 +118,18 @@ void Can::listen() {
  * @brief Attendre jusqu'à ce qu'une réponse soit reçue
  * @param rep_id L'identifiant de la réponse
  * @param timeout Le temps d'attente maximal (en ms)
- * @return 0 ou un code d'erreur
  */
-int Can::wait_for_response(uint8_t rep_id, uint32_t timeout) const {
+void Can::wait_for_response(can_mess_t* mess, uint8_t rep_id, uint32_t timeout) {
     auto start = chrono::steady_clock::now();
 
     while (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count() < timeout) {
-        if (responses.contains(rep_id))
-            return 0;
-    }
+        if (!responses.contains(rep_id))
+            continue;
 
-    return CAN_E_TIMEOUT;
+        *mess = responses[rep_id];
+        responses.erase(rep_id);
+        return;
+    }
 }
 
 

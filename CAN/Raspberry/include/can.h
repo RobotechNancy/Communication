@@ -38,6 +38,8 @@ typedef std::function<void(const can_mess_t&)> can_callback_t;
 class Can {
 private:
     int sock;
+    std::atomic<bool> is_listening;
+    std::map<uint8_t, can_mess_t> responses;
     std::unique_ptr<std::thread> listen_thread;
     std::map<uint32_t, can_callback_t> listeners;
 
@@ -46,18 +48,17 @@ private:
 public:
     Logger logger;
     uint8_t emit_addr;
-    std::atomic<bool> is_listening;
-    std::map<uint8_t, can_mess_t> responses;
 
     explicit Can(uint32_t emit_addr);
     int init();
 
     void subscribe(uint32_t fct_code, const can_callback_t& callback);
+    int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id);
+
     void start_listen();
-    int wait_for_response(uint8_t rep_id, uint32_t timeout) const;
+    void wait_for_response(can_mess_t *mess, uint8_t rep_id, uint32_t timeout);
     void close();
 
-    int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id);
 };
 
 #endif //RASPBERRY_H
