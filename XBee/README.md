@@ -6,7 +6,7 @@ Il s'agit d'une version légèrement modifiée de la librairie de Samuel-Charles
 using namespace std;
 
 
-void test_alive_callback(const frame_t& frame) {
+void test_alive_callback(const xbee_frame_t& frame) {
     cout << "Test alive reçu de " << frame.adr_emetteur << endl;
 }
 
@@ -20,7 +20,7 @@ int main() {
     }
 
     // Alternative : xbee.subscribe(XB_FCT_TEST_ALIVE, test_alive_callback);
-    xbee.subscribe(XB_FCT_TEST_ALIVE, [&](const frame_t& frame) {
+    xbee.subscribe(XB_FCT_TEST_ALIVE, [&](const xbee_frame_t& frame) {
          cout << "Test alive reçu de " << (int) frame.adr_emetteur << endl;
     });
 

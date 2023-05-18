@@ -26,7 +26,6 @@
 // Paramètres de la trame message
 #define XB_V_START 0x02
 #define XB_V_END 0x03
-#define XB_V_ACK 0x06
 #define XB_V_SEQ_SHIFT 4
 
 #define XB_FCT_TEST_ALIVE     0x07

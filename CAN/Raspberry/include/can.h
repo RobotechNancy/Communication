@@ -39,7 +39,7 @@ class Can {
 private:
     int sock;
     std::atomic<bool> is_listening;
-    std::map<uint8_t, can_mess_t> responses;
+    std::map<uint32_t, can_mess_t> responses;
     std::unique_ptr<std::thread> listen_thread;
     std::map<uint32_t, can_callback_t> listeners;
 
@@ -56,7 +56,7 @@ public:
     int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id);
 
     void start_listen();
-    void wait_for_response(can_mess_t *mess, uint8_t rep_id, uint32_t timeout);
+    can_mess_t wait_for_response(CAN_FCT_CODE fct_code, uint32_t timeout);
     void close();
 
 };

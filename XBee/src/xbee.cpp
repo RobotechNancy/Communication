@@ -62,6 +62,9 @@ void XBee::closeSerialConnection() {
 
     serial.closeDevice();
     logger << "(serial) connexion série fermée avec succès" << mendl;
+
+    is_listening = false;
+    listen_thread->join();
 }
 
 
@@ -318,6 +321,7 @@ bool XBee::writeATConfig() {
 
 
 void XBee::start_listen() {
+    is_listening = true;
     listen_thread = std::make_unique<thread>(&XBee::listen, this);
     logger << "Thread de réception des trames démarré" << mendl;
 }
@@ -335,10 +339,10 @@ void XBee::subscribe(uint8_t fct_code, const xbee_callback_t& callback) {
 /*!
  *  @brief Attendre, vérifier et traiter une trame reçue
  */
-[[noreturn]] void XBee::listen() {
+void XBee::listen() {
     vector<uint8_t> response;
 
-    while (true) {
+    while (is_listening) {
         response.clear();
         this_thread::sleep_for(chrono::milliseconds(10));
 
@@ -347,6 +351,28 @@ void XBee::subscribe(uint8_t fct_code, const xbee_callback_t& callback) {
             processResponse(response);
         }
     }
+}
+
+
+/*!
+ * @brief Attendre une réponse à une demande XBee
+ * @param fct_code Le code fonction de la demandee
+ * @param timeout  Le temps d'attente maximal
+ * @return La trame de réponse
+ */
+xbee_frame_t XBee::wait_for_response(uint8_t fct_code, uint32_t timeout) {
+    auto start = chrono::steady_clock::now();
+
+    while (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count() < timeout) {
+        if (!responses.contains(fct_code))
+            continue;
+
+        auto response = responses.at(fct_code);
+        responses.erase(fct_code);
+        return response;
+    }
+
+    return {};
 }
 
 
@@ -433,7 +459,7 @@ int XBee::processFrame(vector<uint8_t> recv_frame) {
     if (module_addr != recv_frame[2])
         return XB_TRAME_E_WRONG_ADR;
 
-    frame_t frame = {
+    xbee_frame_t frame = {
             .start_seq = recv_frame[0],
             .adr_emetteur = recv_frame[1],
             .adr_dest = recv_frame[2],
@@ -453,7 +479,7 @@ int XBee::processFrame(vector<uint8_t> recv_frame) {
     if (listeners.contains(frame.code_fct))
         listeners[frame.code_fct](frame);
     else
-        logger << "(processFrame) Code fonction non traité : " << frame.code_fct << mendl;
+        responses[frame.code_fct] = frame;
 
     return XB_TRAME_E_SUCCESS;
 }
@@ -514,7 +540,7 @@ int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<uint8_t>& data,
 
 
 /*!
- *  @brief Afficher les données découpées d'une structure de type frame_t
+ *  @brief Afficher les données découpées d'une structure de type xbee_frame_t
  */
 template<typename T>
 void XBee::printFrame(const T &frame, int data_len) {

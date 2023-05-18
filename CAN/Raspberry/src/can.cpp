@@ -97,10 +97,10 @@ void Can::listen() {
         for (int i = 0; i < response.data_len ; i++)
             logger << hex << showbase << (int) response.data[i] << " ";
 
-        logger << mendl;
+        logger << mendl;(this_thread::yield());
 
         if (response.is_rep) {
-            responses[response.rep_id] = response;
+            responses[response.fct_code] = response;
             continue;
         }
 
@@ -119,17 +119,19 @@ void Can::listen() {
  * @param rep_id L'identifiant de la réponse
  * @param timeout Le temps d'attente maximal (en ms)
  */
-void Can::wait_for_response(can_mess_t* mess, uint8_t rep_id, uint32_t timeout) {
+can_mess_t Can::wait_for_response(CAN_FCT_CODE fct_code, uint32_t timeout) {
     auto start = chrono::steady_clock::now();
 
     while (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count() < timeout) {
-        if (!responses.contains(rep_id))
+        if (!responses.contains(fct_code))
             continue;
 
-        *mess = responses[rep_id];
-        responses.erase(rep_id);
-        return;
+        auto response = responses[fct_code];
+        responses.erase(fct_code);
+        return response;
     }
+
+    return {};
 }
 
 

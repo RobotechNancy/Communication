@@ -27,7 +27,7 @@
 
 
 /*!
- * @typedef  frame_t
+ * @typedef  xbee_frame_t
  * @brief    <br>Format des trames reçues en fonction des paramètres de la trame
  */
 typedef struct {
@@ -42,10 +42,10 @@ typedef struct {
     uint8_t crc_low;            /*!< Bits de poids faible du CRC */
     uint8_t crc_high;           /*!< Bits de poids fort du CRC */
     uint8_t end_seq;            /*!< Caractère de fin de trame */
-} frame_t;
+} xbee_frame_t;
 
 // Type d'une fonction qui gère un code fonction
-typedef std::function<void(const frame_t&)> xbee_callback_t;
+typedef std::function<void(const xbee_frame_t&)> xbee_callback_t;
 
 
 /*!  @class  XBee
@@ -69,7 +69,9 @@ private:
 
     int nb_trame = 0;
     uint8_t module_addr;
+    std::map<uint8_t, xbee_frame_t> responses;
 
+    std::atomic<bool> is_listening;
     std::unique_ptr<std::thread> listen_thread;
     std::map<uint32_t, xbee_callback_t> listeners;
 
@@ -80,7 +82,8 @@ private:
     bool readATResponse(const char *value = XB_AT_R_EMPTY, int mode = 0);
     bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
 
-    [[noreturn]] void listen();
+    void listen();
+    xbee_frame_t wait_for_response(uint8_t fct_code, uint32_t timeout);
     int processResponse(const std::vector<uint8_t> &response);
     int processSubFrame(std::vector<uint8_t> &recv_msg);
     int processFrame(std::vector<uint8_t> recv_frame);
