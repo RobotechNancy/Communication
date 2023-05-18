@@ -8,6 +8,7 @@
 
 #include "can.h"
 
+CAN_EMIT_ADDR can_addr;
 
 void configure_CAN(CAN_HandleTypeDef *hcan, CAN_EMIT_ADDR addr) {
     CAN_FilterTypeDef sFilterConfig;
@@ -26,6 +27,7 @@ void configure_CAN(CAN_HandleTypeDef *hcan, CAN_EMIT_ADDR addr) {
 
     HAL_CAN_ConfigFilter(hcan, &sFilterConfig);
 
+    can_addr = addr;
     HAL_CAN_Start(hcan); // Démarrer le périphérique CAN
     HAL_CAN_ActivateNotification(hcan, CAN_IT_RX_FIFO0_MSG_PENDING); // Activer le mode interruption
 }
@@ -85,7 +87,7 @@ int send(CAN_HandleTypeDef *hcan, CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t 
 
 	CAN_TxHeaderTypeDef txHeader;
 	txHeader.DLC = data_len;
-	txHeader.ExtId = addr | CAN_ADDR_BASE_ROULANTE_E | fct_code | rep_len | msg_id << CAN_DECALAGE_ID_MSG | is_rep << CAN_DECALAGE_IS_REP | rep_len;
+	txHeader.ExtId = addr | can_addr | fct_code | rep_len | msg_id << CAN_DECALAGE_ID_MSG | is_rep << CAN_DECALAGE_IS_REP | rep_len;
 	txHeader.IDE = CAN_ID_EXT;
 	txHeader.RTR = CAN_RTR_DATA;
 	txHeader.TransmitGlobalTime = DISABLE;
