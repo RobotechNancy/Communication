@@ -53,10 +53,10 @@ typedef std::function<void(const frame_t&)> xbee_callback_t;
  */
 class XBee {
 public:
-    explicit XBee();
+    explicit XBee(uint8_t addr);
     ~XBee() = default;
 
-    int openSerialConnection(const char* port, uint8_t addr);
+    int openSerialConnection(const char* port);
     void closeSerialConnection();
     static void delay(float seconds);
 

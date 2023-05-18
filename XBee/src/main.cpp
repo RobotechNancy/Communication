@@ -12,8 +12,8 @@ using namespace std;
 
 
 int main() {
-    XBee xbee;
-    int status = xbee.openSerialConnection("/dev/ttyUSB0", XB_ADR_ROBOT_01);
+    XBee xbee(XB_ADR_ROBOT_01);
+    int status = xbee.openSerialConnection("/dev/ttyUSB0");
 
     if (status != XB_SER_E_SUCCESS) {
         cout << "Erreur à l'établissement de la connection série : " << status << endl;
