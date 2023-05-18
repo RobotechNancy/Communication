@@ -37,6 +37,8 @@ typedef std::function<void(const can_mess_t&)> can_callback_t;
  */
 class Can {
 private:
+    Logger logger;
+
     int sock;
     std::atomic<bool> is_listening;
     std::map<uint32_t, can_mess_t> responses;
@@ -46,10 +48,7 @@ private:
     void listen();
     int format_frame(can_mess_t &response, can_frame& frame) const;
 public:
-    Logger logger;
-    uint8_t emit_addr;
-
-    explicit Can(uint32_t emit_addr);
+    explicit Can();
     int init();
 
     void subscribe(uint32_t fct_code, const can_callback_t& callback);

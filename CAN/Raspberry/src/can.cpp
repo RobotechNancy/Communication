@@ -11,12 +11,11 @@
 using namespace std;
 
 
-Can::Can(::uint32_t emit_addr) :
+Can::Can() :
     sock(0),
     logger("can"),
     listen_thread(),
-    is_listening(false),
-    emit_addr(emit_addr)
+    is_listening(false)
 {}
 
 
@@ -47,7 +46,7 @@ int Can::init() {
     }
 
     struct can_filter rfilter[1];
-    rfilter[0].can_id = emit_addr;
+    rfilter[0].can_id = CAN_ADDR_RASPBERRY_E;
     rfilter[0].can_mask = CAN_FILTER_ADDR_RECEPTEUR;
 
     logger << "Bus CAN initialisé" << mendl;
@@ -187,11 +186,11 @@ int Can::send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t *data, uint8_t data_
 
     can_frame frame{};
     frame.can_dlc = data_len;
-    frame.can_id = (uint8_t) addr | emit_addr | fct_code | rep_len | msg_id << CAN_DECALAGE_ID_MSG | is_rep << CAN_DECALAGE_IS_REP | CAN_EFF_FLAG;
+    frame.can_id = (uint8_t) addr | CAN_ADDR_BASE_ROULANTE_E | fct_code | rep_len | msg_id << CAN_DECALAGE_ID_MSG | is_rep << CAN_DECALAGE_IS_REP | CAN_EFF_FLAG;
 
     logger << "SEND: ";
     logger << "   recv_addr : " << hex << showbase << addr;
-    logger << "   emit_addr : " << emit_addr;
+    logger << "   emit_addr : " << CAN_ADDR_RASPBERRY_E;
     logger << "   fct_code : " << fct_code;
     logger << "   rep_id : " << msg_id;
     logger << "   is_rep : " << is_rep;
