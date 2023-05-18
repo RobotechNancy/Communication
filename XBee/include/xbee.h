@@ -61,6 +61,7 @@ public:
     static void delay(float seconds);
 
     void start_listen();
+    xbee_frame_t wait_for_response(uint8_t fct_code, uint32_t timeout);
     void subscribe(uint8_t fct_code, const xbee_callback_t& callback);
     int sendFrame(uint8_t dest, uint8_t fct_code, const std::vector<uint8_t>& data, uint8_t data_len = 1);
 private:
@@ -83,7 +84,6 @@ private:
     bool sendATCommand(const char *command, const char *value, unsigned int mode = XB_AT_M_SET);
 
     void listen();
-    xbee_frame_t wait_for_response(uint8_t fct_code, uint32_t timeout);
     int processResponse(const std::vector<uint8_t> &response);
     int processSubFrame(std::vector<uint8_t> &recv_msg);
     int processFrame(std::vector<uint8_t> recv_frame);
