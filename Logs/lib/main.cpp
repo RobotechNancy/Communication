@@ -10,10 +10,10 @@
 #include "logs.h"
 
 int main() {
-    Logger logger("test");
+    Logger logger("test", "../logs.log");
 
-    logger << "Hello, World!" << mendl;
-    logger << "Hello, World! " << 2 << mendl;
+    logger << "Hello, World!" << std::endl;
+    logger << "Hello, World! " << 2 << std::endl;
 
     return 0;
 }

@@ -20,10 +20,10 @@
 #include <iostream>
 #include <iterator>
 #include <functional>
+#include <robotech/logs.h>
 
 #include "serialib.h"
-#include "xbee_vars.h"
-#include "robotech/logs.h"
+#include "define_xbee.h"
 
 
 /*!

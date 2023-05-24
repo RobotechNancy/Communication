@@ -39,12 +39,12 @@ int XBee::openSerialConnection(const char* module_port) {
     if (status != XB_SER_E_SUCCESS) {
         logger << "(serial) /!\\ erreur " << status << " : impossible d'ouvrir le port "
                << module_port << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parités : "
-               << XB_PARITY_PRIMARY << mendl;
+               << XB_PARITY_PRIMARY << std::endl;
         return status;
     }
 
     logger << "(serial) connexion ouverte avec succès sur le port " << module_port
-           << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parité : " << XB_PARITY_PRIMARY << mendl;
+           << " - baudrate : " << XB_BAUDRATE_PRIMARY << " - parité : " << XB_PARITY_PRIMARY << std::endl;
 
     if ((status = checkATConfig()) < 0)
         return status;
@@ -58,10 +58,10 @@ int XBee::openSerialConnection(const char* module_port) {
  */
 void XBee::closeSerialConnection() {
     serial.flushReceiver();
-    logger << "(serial) buffer Rx nettoyé avec succès" << mendl;
+    logger << "(serial) buffer Rx nettoyé avec succès" << std::endl;
 
     serial.closeDevice();
-    logger << "(serial) connexion série fermée avec succès" << mendl;
+    logger << "(serial) connexion série fermée avec succès" << std::endl;
 
     is_listening = false;
     listen_thread->join();
@@ -89,88 +89,88 @@ void XBee::closeSerialConnection() {
  */
 int XBee::checkATConfig() {
     if (enterATMode())
-        logger << "(config AT) entrée dans le mode AT" << mendl;
+        logger << "(config AT) entrée dans le mode AT" << std::endl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_AT_E_ENTER << " : impossible d'entrer dans le mode AT" << mendl;
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_ENTER << " : impossible d'entrer dans le mode AT" << std::endl;
         closeSerialConnection();
         return XB_AT_E_ENTER;
     }
 
     if (sendATCommand(XB_AT_CMD_BAUDRATE, XB_AT_V_BAUDRATE, XB_AT_M_GET))
-        logger << "(config AT) baudrate vérifié avec succès" << mendl;
+        logger << "(config AT) baudrate vérifié avec succès" << std::endl;
     else if (sendATCommand(XB_AT_CMD_BAUDRATE, XB_AT_V_BAUDRATE))
-        logger << "(config AT) baudrate configuré avec succès" << mendl;
+        logger << "(config AT) baudrate configuré avec succès" << std::endl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_AT_E_BAUDRATE << " : impossible de configurer le baudrate" << mendl;
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_BAUDRATE << " : impossible de configurer le baudrate" << std::endl;
         return XB_AT_E_BAUDRATE;
     }
 
     if (sendATCommand(XB_AT_CMD_PARITY, XB_AT_V_PARITY, XB_AT_M_GET))
-        logger << "(config AT) nombre de bits de parité vérifié avec succès" << mendl;
+        logger << "(config AT) nombre de bits de parité vérifié avec succès" << std::endl;
     else if (sendATCommand(XB_AT_CMD_PARITY, XB_AT_V_PARITY))
-        logger << "(config AT) nombre de bits de parité configuré avec succès" << mendl;
+        logger << "(config AT) nombre de bits de parité configuré avec succès" << std::endl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_PARITY
-               << " : impossible de configurer la parité" << mendl;
+               << " : impossible de configurer la parité" << std::endl;
         return XB_AT_E_PARITY;
     }
 
     if (sendATCommand(XB_AT_CMD_API, XB_AT_V_API, XB_AT_M_GET))
-        logger << "(config AT) mode API vérifié avec succès" << mendl;
+        logger << "(config AT) mode API vérifié avec succès" << std::endl;
     else if (sendATCommand(XB_AT_CMD_API, XB_AT_V_API))
-        logger << "(config AT) mode API configuré avec succès" << mendl;
+        logger << "(config AT) mode API configuré avec succès" << std::endl;
     else {
-        logger << "/!\\ (config AT) erreur " << XB_AT_E_API << " : impossible de configurer le mode API" << mendl;
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_API << " : impossible de configurer le mode API" << std::endl;
         return XB_AT_E_API;
     }
 
     if (sendATCommand(XB_AT_CMD_AES, XB_AT_V_AES, XB_AT_M_GET))
-        logger << "(config AT) chiffrement AES vérifié avec succès" << mendl;
+        logger << "(config AT) chiffrement AES vérifié avec succès" << std::endl;
     else if (sendATCommand(XB_AT_CMD_AES, XB_AT_V_AES))
-        logger << "(config AT) chiffrement AES configuré avec succès" << mendl;
+        logger << "(config AT) chiffrement AES configuré avec succès" << std::endl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_AES
-               << " : impossible de configurer le paramètre de chiffrement AES" << mendl;
+               << " : impossible de configurer le paramètre de chiffrement AES" << std::endl;
         return XB_AT_E_AES;
     }
 
     if (sendATCommand(XB_AT_CMD_AES_KEY, XB_AT_V_AES_KEY))
-        logger << "(config AT) clé de chiffrement configurée avec succès" << mendl;
+        logger << "(config AT) clé de chiffrement configurée avec succès" << std::endl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_AES_KEY
-               << " : impossible de configurer la clé de chiffrement AES" << mendl;
+               << " : impossible de configurer la clé de chiffrement AES" << std::endl;
         return XB_AT_E_AES_KEY;
     }
 
     if (sendATCommand(XB_AT_CMD_CHANEL, XB_AT_V_CHANEL, XB_AT_M_GET))
-        logger << "(config AT) canal de découverte réseau vérifié avec succès" << mendl;
+        logger << "(config AT) canal de découverte réseau vérifié avec succès" << std::endl;
     else if (sendATCommand(XB_AT_CMD_CHANEL, XB_AT_V_CHANEL))
-        logger << "(config AT) canal de découverte réseau configuré avec succès" << mendl;
+        logger << "(config AT) canal de découverte réseau configuré avec succès" << std::endl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_CHANEL
-               << " : impossible de configurer le canal de découverte réseau" << mendl;
+               << " : impossible de configurer le canal de découverte réseau" << std::endl;
         return XB_AT_E_CHANEL;
     }
 
     if (sendATCommand(XB_AT_CMD_PAN_ID, XB_AT_V_PAN_ID, XB_AT_M_GET))
-        logger << "(config AT) ID du réseau vérifié avec succès" << mendl;
+        logger << "(config AT) ID du réseau vérifié avec succès" << std::endl;
     else if (sendATCommand(XB_AT_CMD_PAN_ID, XB_AT_V_PAN_ID))
-        logger << "(config AT) ID du réseau configuré avec succès" << mendl;
+        logger << "(config AT) ID du réseau configuré avec succès" << std::endl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_PAN_ID << " : impossible de configurer l'ID du réseau"
-               << mendl;
+               << std::endl;
         return XB_AT_E_PAN_ID;
     }
 
     const char* coordinator = (module_addr == 1) ? XB_AT_V_COORDINATOR : XB_AT_V_END_DEVICE;
 
     if (sendATCommand(XB_AT_CMD_COORDINATOR, coordinator, XB_AT_M_GET))
-        logger << "(config AT) mode coordinateur vérifié avec succès" << mendl;
+        logger << "(config AT) mode coordinateur vérifié avec succès" << std::endl;
     else if (sendATCommand(XB_AT_CMD_COORDINATOR, coordinator))
-        logger << "(config AT) mode coordinateur configuré avec succès" << mendl;
+        logger << "(config AT) mode coordinateur configuré avec succès" << std::endl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_COORDINATOR
-               << " : impossible de configurer le mode coordinateur" << mendl;
+               << " : impossible de configurer le mode coordinateur" << std::endl;
         return XB_AT_E_COORDINATOR;
     }
 
@@ -178,50 +178,50 @@ int XBee::checkATConfig() {
     sprintf(addr, "%d\r", module_addr);
 
     if (sendATCommand(XB_AT_CMD_16BIT_SOURCE_ADDR, addr, XB_AT_M_GET))
-        logger << "(config AT) adresse source 16bits vérifiée avec succès" << mendl;
+        logger << "(config AT) adresse source 16bits vérifiée avec succès" << std::endl;
     else if (sendATCommand(XB_AT_CMD_16BIT_SOURCE_ADDR, addr))
-        logger << "(config AT) adresse source 16bits configurée avec succès" << mendl;
+        logger << "(config AT) adresse source 16bits configurée avec succès" << std::endl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_16BIT_SOURCE_ADDR
-               << " : impossible de configurer l'adresse source 16bits" << mendl;
+               << " : impossible de configurer l'adresse source 16bits" << std::endl;
         return XB_AT_E_16BIT_SOURCE_ADDR;
     }
 
     if (sendATCommand(XB_AT_CMD_LOW_DEST_ADDR, XB_AT_V_LOW_DEST_ADDR, XB_AT_M_GET))
-        logger << "(config AT) adresse de destination vérifiée avec succès" << mendl;
+        logger << "(config AT) adresse de destination vérifiée avec succès" << std::endl;
     else if (sendATCommand(XB_AT_CMD_LOW_DEST_ADDR, XB_AT_V_LOW_DEST_ADDR))
-        logger << "(config AT) adresse de destination configurée avec succès" << mendl;
+        logger << "(config AT) adresse de destination configurée avec succès" << std::endl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_LOW_DEST_ADDR
-               << " : impossible de configurer l'adresse de destination" << mendl;
+               << " : impossible de configurer l'adresse de destination" << std::endl;
         return XB_AT_E_LOW_DEST_ADDR;
     }
 
     if (sendATCommand(XB_AT_CMD_HIGH_DEST_ADDR, XB_AT_V_HIGH_DEST_ADDR, XB_AT_M_GET))
-        logger << "(config AT) adresse de destination vérifiée avec succès" << mendl;
+        logger << "(config AT) adresse de destination vérifiée avec succès" << std::endl;
     else if (sendATCommand(XB_AT_CMD_HIGH_DEST_ADDR, XB_AT_V_HIGH_DEST_ADDR))
-        logger << "(config AT) adresse de destination configurée avec succès" << mendl;
+        logger << "(config AT) adresse de destination configurée avec succès" << std::endl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_LOW_DEST_ADDR
-               << " : impossible de configurer l'adresse de destination" << mendl;
+               << " : impossible de configurer l'adresse de destination" << std::endl;
         return XB_AT_E_LOW_DEST_ADDR;
     }
 
     if (writeATConfig())
-        logger << "(config AT) configuration AT enregistrée dans la mémoire du module" << mendl;
+        logger << "(config AT) configuration AT enregistrée dans la mémoire du module" << std::endl;
     else {
         logger << "/!\\ (config AT) erreur " << XB_AT_E_WRITE_CONFIG
-               << " : impossible d'écrire les paramètres dans la mémoire flash" << mendl;
+               << " : impossible d'écrire les paramètres dans la mémoire flash" << std::endl;
         return XB_AT_E_WRITE_CONFIG;
     }
 
     if (!exitATMode()) {
-        logger << "/!\\ (config AT) erreur " << XB_AT_E_EXIT << " : impossible de sortir du mode AT" << mendl;
+        logger << "/!\\ (config AT) erreur " << XB_AT_E_EXIT << " : impossible de sortir du mode AT" << std::endl;
         return XB_AT_E_EXIT;
     }
 
     serial.flushReceiver();
-    logger << "(config AT) configuration AT réalisée avec succès" << mendl;
+    logger << "(config AT) configuration AT réalisée avec succès" << std::endl;
     return XB_AT_E_SUCCESS;
 }
 
@@ -239,12 +239,12 @@ bool XBee::sendATCommand(const char *command, const char *value, unsigned int mo
 
     if (mode == XB_AT_M_GET) {
         serial.writeString(XB_AT_V_END_LINE);
-        logger << "(config AT) envoi de la commande AT : " << command << mendl;
+        logger << "(config AT) envoi de la commande AT : " << command << std::endl;
         return readATResponse(value);
     }
 
     serial.writeString(value);
-    logger << "(config AT) envoi de la commande AT : " << command << "=" << value << mendl;
+    logger << "(config AT) envoi de la commande AT : " << command << "=" << value << std::endl;
     return readATResponse(XB_AT_R_SUCCESS);
 }
 
@@ -264,8 +264,8 @@ bool XBee::readATResponse(const char *value, int mode) {
         readRx<string>(response);
         serial.flushReceiver();
 
-        logger << "(config AT) réponse du XBee : " << mendl;
-        logger << response << mendl;
+        logger << "(config AT) réponse du XBee : " << std::endl;
+        logger << response << std::endl;
 
         return !response.empty() && response != XB_AT_V_END_LINE;
     }
@@ -273,7 +273,7 @@ bool XBee::readATResponse(const char *value, int mode) {
     readRx<string>(response);
     serial.flushReceiver();
 
-    logger << "(config AT) Réponse du XBee : " << response << mendl;
+    logger << "(config AT) Réponse du XBee : " << response << std::endl;
     return mode == 0 && response == value;
 }
 
@@ -284,7 +284,7 @@ bool XBee::readATResponse(const char *value, int mode) {
  */
 bool XBee::enterATMode() {
     serial.writeString(XB_AT_CMD_ENTER);
-    logger << "(config AT) entrée en mode AT en cours..." << mendl;
+    logger << "(config AT) entrée en mode AT en cours..." << std::endl;
 
     delay(2);
     serial.writeString(XB_AT_V_END_LINE);
@@ -299,7 +299,7 @@ bool XBee::enterATMode() {
 bool XBee::exitATMode() {
     serial.writeString(XB_AT_CMD_EXIT);
     serial.writeString(XB_AT_V_END_LINE);
-    logger << "(config AT) sortie du mode AT" << mendl;
+    logger << "(config AT) sortie du mode AT" << std::endl;
     return readATResponse(XB_AT_R_SUCCESS);
 }
 
@@ -312,7 +312,7 @@ bool XBee::exitATMode() {
 bool XBee::writeATConfig() {
     serial.writeString(XB_AT_CMD_WRITE_CONFIG);
     serial.writeString(XB_AT_V_END_LINE);
-    logger << "(config AT) écriture des paramètres AT dans la mémoire" << mendl;
+    logger << "(config AT) écriture des paramètres AT dans la mémoire" << std::endl;
     return readATResponse(XB_AT_R_SUCCESS);
 }
 
@@ -323,7 +323,7 @@ bool XBee::writeATConfig() {
 void XBee::start_listen() {
     is_listening = true;
     listen_thread = std::make_unique<thread>(&XBee::listen, this);
-    logger << "Thread de réception des trames démarré" << mendl;
+    logger << "Thread de réception des trames démarré" << std::endl;
 }
 
 /*!
@@ -377,7 +377,7 @@ xbee_frame_t XBee::wait_for_response(uint8_t fct_code, uint32_t timeout) {
 
 
 int XBee::processResponse(const vector<uint8_t>& response) {
-    logger << "(process trame) trame reçue" << mendl;
+    logger << "(process trame) trame reçue" << std::endl;
 
     int status = -1;
     vector<uint8_t> buffer{};
@@ -392,7 +392,7 @@ int XBee::processResponse(const vector<uint8_t>& response) {
     }
 
     if (status < 0) {
-        logger << "/!\\ (process trame) erreur " << XB_SUBTRAME_E_NONE << " : Aucune sous-trame valide " << mendl;
+        logger << "/!\\ (process trame) erreur " << XB_SUBTRAME_E_NONE << " : Aucune sous-trame valide " << std::endl;
         return XB_TRAME_E_START;
     }
 
@@ -415,17 +415,17 @@ int XBee::processSubFrame(vector<uint8_t> &recv_msg) {
     printFrame(recv_msg, data_len);
 
     if (recv_msg[0] != XB_V_START) {
-        logger << "/!\\ (process trame) erreur " << XB_TRAME_E_START << " : Séquence de début incorrect " << mendl;
+        logger << "/!\\ (process trame) erreur " << XB_TRAME_E_START << " : Séquence de début incorrect " << std::endl;
         return XB_TRAME_E_START;
     }
 
     if (data_len > 255) {
-        logger << "/!\\ (process trame) erreur " << XB_TRAME_E_DATALEN << " : Longueur de données incorrecte " << mendl;
+        logger << "/!\\ (process trame) erreur " << XB_TRAME_E_DATALEN << " : Longueur de données incorrecte " << std::endl;
         return XB_TRAME_E_DATALEN;
     }
 
     if (recv_msg[9 + data_len] != XB_V_END) {
-        logger << "/!\\ (process trame) erreur " << XB_TRAME_E_END << " : Séquence de fin incorrecte " << mendl;
+        logger << "/!\\ (process trame) erreur " << XB_TRAME_E_END << " : Séquence de fin incorrecte " << std::endl;
         return XB_TRAME_E_END;
     }
 
@@ -435,14 +435,14 @@ int XBee::processSubFrame(vector<uint8_t> &recv_msg) {
 
     if (!validateCRC(recv_msg[7 + data_len], recv_msg[8 + data_len], msg_slice, data_len + 6)) {
         logger << "/!\\ (process trame) erreur " << XB_TRAME_E_CRC << " : CRC incorrect "
-               << mendl;
+               << std::endl;
         return XB_TRAME_E_CRC;
     }
 
     recv_msg[3] -= XB_V_SEQ_SHIFT;
     recv_msg[4] -= XB_V_SEQ_SHIFT;
     recv_msg[5] -= XB_V_SEQ_SHIFT;
-    logger << "(découpe trame) découpage des trames effectué avec succès" << mendl;
+    logger << "(découpe trame) découpage des trames effectué avec succès" << std::endl;
 
     processFrame(recv_msg);
     return XB_SUBTRAME_E_SUCCESS;
@@ -495,7 +495,7 @@ int XBee::processFrame(vector<uint8_t> recv_frame) {
  */
 int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<uint8_t>& data, uint8_t data_len) {
     if (data_len > 255) {
-        logger << "/!\\ (send frame) erreur " << XB_TRAME_E_DATALEN << " : taille des données trop grande" << mendl;
+        logger << "/!\\ (send frame) erreur " << XB_TRAME_E_DATALEN << " : taille des données trop grande" << std::endl;
         return XB_TRAME_E_DATALEN;
     }
 
@@ -533,7 +533,7 @@ int XBee::sendFrame(uint8_t dest, uint8_t fct_code, const vector<uint8_t>& data,
     printFrame<uint8_t*>(frame, data_len);
     serial.writeBytes(frame, frame_len);
     logger << "(sendFrame) envoi de la frame n°" << dec << frame_id_low + frame_id_high
-           << " effectué avec succès" << mendl;
+           << " effectué avec succès" << std::endl;
 
     return XB_TRAME_E_SUCCESS;
 }

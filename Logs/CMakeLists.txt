@@ -1,15 +1,13 @@
+################################################### PROJECT ###################################################
 set(CMAKE_CXX_STANDARD 20)
 cmake_minimum_required(VERSION 3.16)
 project(Logs VERSION 0.1 DESCRIPTION "Librairie de logs")
 
-add_library(${PROJECT_NAME} src/logs.cpp)
-
+################################################### LIBRARY ###################################################
+add_library(${PROJECT_NAME} lib/logs.h)
+set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
+set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER lib/logs.h)
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(${PROJECT_NAME} PROPERTIES SOVERSION 1)
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER include/logs.h)
-
-target_include_directories(${PROJECT_NAME} PRIVATE include)
-target_include_directories(${PROJECT_NAME} PRIVATE src)
 
 include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME}
@@ -19,5 +17,5 @@ install(TARGETS ${PROJECT_NAME}
 configure_file(${PROJECT_NAME}.pc.in ${PROJECT_NAME}.pc @ONLY)
 install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)
 
-include_directories(${PROJECT_NAME}_test PRIVATE include)
-add_executable(${PROJECT_NAME}_test src/main.cpp src/logs.cpp)
+################################################### TESTING ###################################################
+add_executable(${PROJECT_NAME}_test lib/logs.h lib/main.cpp)

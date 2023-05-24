@@ -23,7 +23,7 @@
  * @param logger Logger à utiliser pour l'affichage
  */
 inline void printError(Logger &logger) {
-    logger << " (" << strerror(errno) << ")" << mendl;
+    logger << " (" << strerror(errno) << ")" << std::endl;
 }
 
 
@@ -51,7 +51,7 @@ int Can::init(can_address_t myAddress) {
 
     // Vérification de l'état de l'interface
     if ((ifr.ifr_flags & IFF_UP) == 0) {
-        logger << "Interface " << CAN_INTERFACE << " down" << mendl;
+        logger << "Interface " << CAN_INTERFACE << " down" << std::endl;
         return -1;
     }
 
@@ -72,7 +72,7 @@ int Can::init(can_address_t myAddress) {
         return -1;
     }
 
-    logger << "Bus CAN initialisé" << mendl;
+    logger << "Bus CAN initialisé" << std::endl;
     return 0;
 }
 
@@ -91,7 +91,7 @@ void Can::print(const can_message_t &frame) {
 
     for (int i = 0; i < frame.length; i++)
         logger << std::hex << (int) frame.data[i] << " ";
-    logger << std::dec << mendl;
+    logger << std::dec << std::endl;
 }
 
 
@@ -101,14 +101,14 @@ void Can::print(const can_message_t &frame) {
  */
 int Can::startListening() {
     if (isListening) {
-        logger << "Le socket est déjà en écoute" << mendl;
+        logger << "Le socket est déjà en écoute" << std::endl;
         return -1;
     }
 
     isListening = true;
     listenerThread = std::make_unique<std::thread>(&Can::listen, this);
 
-    logger << "Le bus CAN est sous écoute" << mendl;
+    logger << "Le bus CAN est sous écoute" << std::endl;
     return 0;
 }
 
@@ -159,7 +159,7 @@ void Can::listen() {
         } else if (callback != callbacks.end()) {
             callback->second(frame);
         } else {
-            logger << "Code fonction non traité : " << frame.functionCode << mendl;
+            logger << "Code fonction non traité : " << frame.functionCode << std::endl;
         }
     }
 }
@@ -173,7 +173,7 @@ int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
     }
 
     if (buffer.can_dlc > 8) {
-        logger << "Taille du message trop grande : " << buffer.can_dlc << mendl;
+        logger << "Taille du message trop grande : " << buffer.can_dlc << std::endl;
         return -1;
     }
 
@@ -190,7 +190,7 @@ int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
 
     for (int i = 0; i < buffer.can_dlc; i++){
         if(buffer.data[i] < 0 || buffer.data[i] > 255) {
-            logger << "Valeur du message non valide : " << buffer.data[i] << mendl;
+            logger << "Valeur du message non valide : " << buffer.data[i] << std::endl;
             return -1;
         }
 
@@ -222,7 +222,7 @@ int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
         ).count();
 
         if (elapsed > duration) {
-            logger << "Timeout lors de l'attente d'une réponse" << mendl;
+            logger << "Timeout lors de l'attente d'une réponse" << std::endl;
             return -1;
         }
     }
@@ -231,7 +231,7 @@ int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
 
 int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length, uint8_t messageID, bool isResponse) {
     if (length > 8) {
-        logger << "Taille du message trop grande : " << length << mendl;
+        logger << "Taille du message trop grande : " << length << std::endl;
         return -1;
     }
 

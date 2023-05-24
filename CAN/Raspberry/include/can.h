@@ -16,9 +16,9 @@
 #include <thread>
 #include <atomic>
 #include <linux/can.h>
+#include <robotech/logs.h>
 
 #include "define_can.h"
-#include "robotech/logs.h"
 
 
 // Type des fonctions de callback
