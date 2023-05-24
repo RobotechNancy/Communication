@@ -33,7 +33,6 @@ public:
     int init(can_address_t address);
     ~Can();
 
-
     int startListening();
     void print(const can_message_t &frame);
     void bind(uint8_t functionCode, can_callback callback);

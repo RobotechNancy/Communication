@@ -166,6 +166,7 @@ void Can::listen() {
 
 
 int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
+    // Lecture du buffer
     if (::read(socket, &buffer, sizeof(struct can_frame)) < 0) {
         logger << "Impossible de lire le buffer";
         printError(logger);
@@ -177,6 +178,7 @@ int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
         return -1;
     }
 
+    // Filtrage du message
     frame.receiverAddress = (buffer.can_id & CAN_MASK_RECEIVER_ADDR) >> CAN_OFFSET_RECEIVER_ADDR;
 
     if (address != frame.receiverAddress && frame.receiverAddress != CAN_ADDR_BROADCAST) {
@@ -188,27 +190,31 @@ int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
     frame.messageID       = (buffer.can_id & CAN_MASK_MESSAGE_ID) >> CAN_OFFSET_MESSAGE_ID;
     frame.isResponse      = buffer.can_id & CAN_MASK_IS_RESPONSE;
 
-    for (int i = 0; i < buffer.can_dlc; i++){
-        if(buffer.data[i] < 0 || buffer.data[i] > 255) {
-            logger << "Valeur du message non valide : " << buffer.data[i] << std::endl;
-            return -1;
-        }
-
-        frame.data[i] = buffer.data[i];
-    }
-
+    // Copie des données
     frame.length = buffer.can_dlc;
+    memcpy(frame.data, buffer.data, buffer.can_dlc);
+
     return 0;
 }
 
 
+/*!
+ * @brief Bloquer le thread courant jusqu'à la réception d'un message
+ * @param frame La structure dans laquelle stocker le message
+ * @param messageID L'ID du message à attendre
+ * @param duration La durée maximale d'attente
+ * @return 0 si tout s'est bien passé, -1 sinon
+ */
 int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
     auto start = std::chrono::steady_clock::now();
 
     while (true) {
+        // Pour éviter tout problème de concurrence, on verrouille la section critique
         mutex.lock();
         auto response = responses.find(messageID);
 
+        // Si on a reçu une réponse, on la copie dans la structure
+        // et on la supprime de la liste des réponses en attente
         if (response != responses.end()) {
             frame = response->second;
             responses.erase(response);
@@ -216,6 +222,7 @@ int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
             return 0;
         }
 
+        // Si on a dépassé le timeout, on quitte la boucle
         mutex.unlock();
         uint32_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                 std::chrono::steady_clock::now() - start
@@ -229,6 +236,16 @@ int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
 }
 
 
+/*!
+ * @brief Envoi d'un message sur le bus CAN
+ * @param dest Adresse du destinataire
+ * @param functionCode Code fonction
+ * @param data Données à envoyer
+ * @param length Longueur des données
+ * @param messageID ID du message
+ * @param isResponse Indique si le message est une réponse à un autre message
+ * @return 0 si tout s'est bien passé, -1 sinon
+ */
 int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length, uint8_t messageID, bool isResponse) {
     if (length > 8) {
         logger << "Taille du message trop grande : " << length << std::endl;
@@ -236,8 +253,7 @@ int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length,
     }
 
     can_frame buffer{};
-
-    buffer.can_dlc = length;
+    buffer.len = length;
     memcpy(buffer.data, data, length);
 
     buffer.can_id = CAN_ADDR_RASPBERRY << CAN_OFFSET_EMIT_ADDR |
@@ -256,11 +272,19 @@ int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length,
 }
 
 
+/*!
+ * @brief Lier une fonction à la réception d'un message
+ * @param functionCode Le code fonction à écouter
+ * @param callback La fonction à appeler
+ */
 void Can::bind(uint8_t functionCode, can_callback callback) {
     callbacks[functionCode] = callback;
 }
 
 
+/*!
+ * @brief Destruction de l'objet, ferme le socket et arrête le thread
+ */
 Can::~Can() {
     if (!isListening) return;
 
