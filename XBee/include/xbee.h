@@ -17,6 +17,7 @@
 #include <iomanip>
 #include <chrono>
 #include <thread>
+#include <atomic>
 #include <iostream>
 #include <iterator>
 #include <functional>
@@ -72,7 +73,7 @@ private:
     uint8_t module_addr;
     std::map<uint8_t, xbee_frame_t> responses;
 
-    std::atomic<bool> is_listening;
+    std::atomic<bool> is_listening{true};
     std::unique_ptr<std::thread> listen_thread;
     std::map<uint32_t, xbee_callback_t> listeners;
 

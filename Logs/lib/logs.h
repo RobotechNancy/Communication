@@ -17,6 +17,15 @@
 #include <iostream>
 
 
+enum Log {
+    NONE = 0,
+    INFO = 1,
+    WARNING = 2,
+    ERROR = 3,
+    CRITICAL = 4
+};
+
+
 /*!
  * @brief Classe qui permet de logger des informations dans un fichier et dans la console
  */
@@ -25,13 +34,13 @@ private:
     std::string name;
     std::ofstream of;
     std::stringstream ss;
-    std::string level;
+    Log level{Log::INFO};
 public:
     explicit Logger(std::string loggerName, const std::string& logFilePath = "logs.log"):
             name(std::move(loggerName)), of(logFilePath, std::ios::app) {};
 
-    Logger& operator()(const std::string& value) {
-        this->level = value;
+    Logger& operator()(Log value) {
+        level = value;
         return *this;
     }
 
@@ -43,20 +52,38 @@ public:
 
     Logger& operator<<(std::ostream& (*f)(std::ostream&)) {
         f(ss);
+        std::stringstream log;
 
         time_t now = time(nullptr);
         tm *ltm = localtime(&now);
 
-        std::stringstream log;
-        log <<  "["
-            << std::setw(2) << std::setfill('0') << ltm->tm_hour << ":"
-            << std::setw(2) << std::setfill('0') << ltm->tm_min << ":"
-            << std::setw(2) << std::setfill('0') << ltm->tm_sec << "-"<< name
-            << "] " << ss.str();
+        switch (level) {
+            case Log::NONE:
+                break;
+            case Log::INFO:
+                log << "[INFO]";
+                break;
+            case Log::WARNING:
+                log << "[WARN]";
+                break;
+            case Log::ERROR:
+                log << "[ERR]";
+                break;
+            case Log::CRITICAL:
+                log << "[CRIT]";
+                break;
+        }
+
+        log << "[" << std::setfill('0') << std::setw(2) << ltm->tm_hour << ":"
+            << std::setfill('0') << std::setw(2) << ltm->tm_min << ":"
+            << std::setfill('0') << std::setw(2) << ltm->tm_sec << "]"
+            << "[" << name << "]";
+
+        log << ss.str();
+        ss.str("");
 
         of << log.str();
         std::cout << log.str();
-        ss.str("");
 
         return *this;
     }
