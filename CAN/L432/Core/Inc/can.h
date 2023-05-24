@@ -1,23 +1,22 @@
 /*!
- * 	\file can.h
- *  \brief     classe de gestion d'un bus can
- *  \details   Cette classe permet d'envoyer et de recevoir des messages via un bus can
- *  \author    Theo RUSINOWITCH <theo.rusinowitch1@etu.univ-lorraine.fr>
- *  \version   4.1a
- *  \date      2021-2022
+ * 	@file      can.h
+ *  @brief     Gestion du bus can (écoute et envoie de message)
+ *  @details   Version modifiée de la librairie de Théo RUSINOWITCH
+ *  @author    Julien Pistre
+ *  @version   1.1
+ *  @date      2022-2023
  */
 
 #ifndef CAN_H
 #define CAN_H
 
 #include <stdbool.h>
-
 #include "stm32l4xx_hal.h"
-#include "robotech/can_vars.h"
+#include "define_can.h"
 
 
-void configure_CAN(CAN_HandleTypeDef *hcan, CAN_EMIT_ADDR adresse);
-int format_frame(can_mess_t *msg, CAN_RxHeaderTypeDef frame, const uint8_t data[]);
-int send(CAN_HandleTypeDef *hcan, CAN_ADDR addr, CAN_FCT_CODE fct_code , uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id);
+void configure_CAN(CAN_HandleTypeDef *hcan, can_address_t adresse);
+int format_frame(can_message_t *msg, CAN_RxHeaderTypeDef frame, const uint8_t data[]);
+int send(CAN_HandleTypeDef *hcan, can_address_t address, function_code_t functionCode , uint8_t data[], uint8_t length, uint8_t messageID, bool isResponse);
 
 #endif /* CAN_H */

@@ -87,7 +87,7 @@ int main(void)
   MX_GPIO_Init();
   MX_CAN1_Init();
   /* USER CODE BEGIN 2 */
-  configure_CAN(&hcan1, CAN_ADDR_BASE_ROULANTE_E);
+  configure_CAN(&hcan1, CAN_ADDR_ODOMETRIE);
   /* USER CODE END 2 */
 
   /* Infinite loop */

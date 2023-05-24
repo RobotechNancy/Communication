@@ -1,53 +1,76 @@
 /*!
- * @file can.h
- * @version 1.0
+ * @file can.cpp
+ * @version 1.2
  * @date 2022-2023
  * @author Julien PISTRE
  * @brief Fichier source de la classe Can
- * @details Version modifiée de la librairie de Théo RUSINOWITCH (v4.1a)
+ * @details Version modifiée de la librairie de Théo RUSINOWITCH (v1)
  */
 
+#include <fcntl.h>
+#include <cstring>
+#include <csignal>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <bits/ioctls.h>
+
 #include "can.h"
-using namespace std;
-
-
-Can::Can() :
-    sock(0),
-    logger("can"),
-    listen_thread(),
-    is_listening(false)
-{}
 
 
 /*!
- * @brief  <br>Initialiser la carte liée au bus CAN
- * @param  emit_addr L'adresse de réception de la carte
- * @return 0 ou un code d'erreur
+ * @brief Affiche le dernier message d'erreur
+ * @param logger Logger à utiliser pour l'affichage
  */
-int Can::init() {
+inline void printError(Logger &logger) {
+    logger << " (" << strerror(errno) << ")" << mendl;
+}
+
+
+/*!
+ * @brief Initialise le bus CAN
+ * @param myAddress Adresse CAN pour le filtrage
+ * @return 0 si tout s'est bien passé, -1 sinon
+ */
+int Can::init(can_address_t myAddress) {
+    // Création du socket en mode non-bloquant
+    address = myAddress;
+    socket = ::socket(PF_CAN, SOCK_RAW, CAN_RAW);
+    fcntl(socket, F_SETFL, O_NONBLOCK);
+
+    // Vérification de la création du socket
     ifreq ifr{};
     sockaddr_can addr{};
+    strcpy(ifr.ifr_name, CAN_INTERFACE);
 
-    if ((sock = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0) {
-        perror("Socket");
-        return CAN_E_SOCKET_ERROR;
+    if (::ioctl(socket, SIOCGIFFLAGS, &ifr) < 0) {
+        logger << "Impossible de récupérer les flags de l'interface " << CAN_INTERFACE;
+        printError(logger);
+        return -1;
     }
 
-    strcpy(ifr.ifr_name, CAN_BUS_NAME);
-    ioctl(sock, SIOCGIFINDEX, &ifr);
+    // Vérification de l'état de l'interface
+    if ((ifr.ifr_flags & IFF_UP) == 0) {
+        logger << "Interface " << CAN_INTERFACE << " down" << mendl;
+        return -1;
+    }
 
-    memset(&addr, 0, sizeof(addr));
+    // Récupération de l'index de l'interface
+    if (::ioctl(socket, SIOCGIFINDEX, &ifr) < 0) {
+        logger << "Impossible de récupérer l'index de l'interface " << CAN_INTERFACE;
+        printError(logger);
+        return -1;
+    }
+
+    // Bind du socket à l'interface
     addr.can_family = AF_CAN;
     addr.can_ifindex = ifr.ifr_ifindex;
 
-    if (bind(sock, (struct sockaddr *)&addr, sizeof(addr)) < 0) {
-        perror("Bind");
-        return CAN_E_BIND_ERROR;
+    if (::bind(socket, (sockaddr *) &addr, sizeof(addr)) < 0) {
+        logger << "Impossible de bind le socket";
+        printError(logger);
+        return -1;
     }
-
-    struct can_filter rfilter[1];
-    rfilter[0].can_id = CAN_ADDR_RASPBERRY_E;
-    rfilter[0].can_mask = CAN_FILTER_ADDR_RECEPTEUR;
 
     logger << "Bus CAN initialisé" << mendl;
     return 0;
@@ -55,168 +78,193 @@ int Can::init() {
 
 
 /*!
- * @brief Lier un code fonction à une fonction
- * @param fct_code Le code fonction à écouter
- * @param callback La fonction à exécuter
+ * @brief Affiche un message CAN
+ * @param frame Message à afficher
  */
-void Can::subscribe(uint32_t fct_code, const can_callback_t& callback) {
-    listeners.insert(std::make_pair(fct_code, callback));
+void Can::print(const can_message_t &frame) {
+    logger << "Message reçu :\n" << std::hex << std::showbase
+           << "  - Adresse émetteur : " << (int) frame.senderAddress << "\n"
+           << "  - Adresse récepteur : " << (int) frame.receiverAddress << "\n"
+           << "  - Code fonction : " << (int) frame.functionCode << "\n"
+           << "  - ID message : " << (int) frame.messageID << "\n"
+           << "  - Données : ";
+
+    for (int i = 0; i < frame.length; i++)
+        logger << std::hex << (int) frame.data[i] << " ";
+    logger << std::dec << mendl;
 }
 
 
 /*!
- * @brief Démarrer un thread d'écoute du bus CAN
+ * @brief Démarrer l'écoute du bus CAN sur un thread séparé
+ * @return 0 si tout s'est bien passé, -1 sinon
  */
-void Can::start_listen() {
-    is_listening = true;
-    listen_thread = std::make_unique<thread>(&Can::listen, this);
-    logger << "Thread d'écoute du CAN démarré" << mendl;
+int Can::startListening() {
+    if (isListening) {
+        logger << "Le socket est déjà en écoute" << mendl;
+        return -1;
+    }
+
+    isListening = true;
+    listenerThread = std::make_unique<std::thread>(&Can::listen, this);
+
+    logger << "Le bus CAN est sous écoute" << mendl;
+    return 0;
 }
 
 
+/*!
+ * @brief Boucle d'écoute du bus CAN
+ * @details Lecture non bloquante du socket pour pouvoir arrêter l'écoute à tout moment
+ */
 void Can::listen() {
-    int err;
-    can_frame frame{};
-    can_mess_t response;
+    fd_set rds{};            // Set de lecture contenant les sockets à écouter
+    timeval timeout = {      // Timeout nul pour faire du polling
+            .tv_sec = 0,
+            .tv_usec = 0
+    };
 
-    while(is_listening) {
-        if((err = format_frame(response, frame)) < 0){
-            logger << "Erreur dans le décodage d'une trame (err n°" << dec << err << ")" << mendl;
+    int status = 0;
+    can_frame buffer{};
+    can_message_t frame{};
+
+    while (isListening) {
+        FD_ZERO(&rds);          // On vide le set de lecture
+        FD_SET(socket, &rds);   // On ajoute le socket au set de lecture
+        status = ::select(socket + 1, &rds, nullptr, nullptr, &timeout); // On attend qu'un socket soit prêt
+
+        // status < 0 signifie qu'une erreur est survenue
+        if (status < 0) {
+            logger << "Erreur lors de la lecture du socket";
+            printError(logger);
             continue;
         }
 
-        logger << "GET : ";
-        logger << "   recv_addr : " << hex << response.recv_addr;
-        logger << "   emit_addr : " << response.emit_addr;
-        logger << "   fct_code : " << response.fct_code;
-        logger << "   rep_id : " << response.rep_id;
-        logger << "   is_rep : " << response.is_rep;
-        logger << "   data : [" << response.data_len << "] ";
-
-        for (int i = 0; i < response.data_len ; i++)
-            logger << hex << showbase << (int) response.data[i] << " ";
-
-        logger << mendl;(this_thread::yield());
-
-        if (response.is_rep) {
-            responses[response.fct_code] = response;
+        // status == 0 signifie que le timeout est arrivé à expiration
+        if (status == 0) {
             continue;
         }
 
-        if (listeners.contains(response.fct_code)) {
-            listeners[response.fct_code](response);
+        // Lecture du buffer et formatage du message
+        if (readBuffer(frame, buffer) < 0)
             continue;
-        }
 
-        logger << "Code fonction non traité : " << hex << showbase << response.fct_code << mendl;
+        print(frame);
+        auto callback = callbacks.find(frame.functionCode);
+
+        if (frame.isResponse) {
+            mutex.lock();
+            responses[frame.messageID] = frame;
+            mutex.unlock();
+        } else if (callback != callbacks.end()) {
+            callback->second(frame);
+        } else {
+            logger << "Code fonction non traité : " << frame.functionCode << mendl;
+        }
     }
 }
 
 
-/*!
- * @brief Attendre jusqu'à ce qu'une réponse soit reçue
- * @param rep_id L'identifiant de la réponse
- * @param timeout Le temps d'attente maximal (en ms)
- */
-can_mess_t Can::wait_for_response(CAN_FCT_CODE fct_code, uint32_t timeout) {
-    auto start = chrono::steady_clock::now();
-
-    while (chrono::duration_cast<chrono::milliseconds>(chrono::steady_clock::now() - start).count() < timeout) {
-        if (!responses.contains(fct_code))
-            continue;
-
-        auto response = responses[fct_code];
-        responses.erase(fct_code);
-        return response;
+int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
+    if (::read(socket, &buffer, sizeof(struct can_frame)) < 0) {
+        logger << "Impossible de lire le buffer";
+        printError(logger);
+        return -1;
     }
 
-    return {};
+    if (buffer.can_dlc > 8) {
+        logger << "Taille du message trop grande : " << buffer.can_dlc << mendl;
+        return -1;
+    }
+
+    frame.receiverAddress = (buffer.can_id & CAN_MASK_RECEIVER_ADDR) >> CAN_OFFSET_RECEIVER_ADDR;
+
+    if (address != frame.receiverAddress && frame.receiverAddress != CAN_ADDR_BROADCAST) {
+        return -1;
+    }
+
+    frame.senderAddress   = (buffer.can_id & CAN_MASK_EMIT_ADDR) >> CAN_OFFSET_EMIT_ADDR;
+    frame.functionCode    = (buffer.can_id & CAN_MASK_FUNCTION_CODE) >> CAN_OFFSET_FUNCTION_CODE;
+    frame.messageID       = (buffer.can_id & CAN_MASK_MESSAGE_ID) >> CAN_OFFSET_MESSAGE_ID;
+    frame.isResponse      = buffer.can_id & CAN_MASK_IS_RESPONSE;
+
+    for (int i = 0; i < buffer.can_dlc; i++){
+        if(buffer.data[i] < 0 || buffer.data[i] > 255) {
+            logger << "Valeur du message non valide : " << buffer.data[i] << mendl;
+            return -1;
+        }
+
+        frame.data[i] = buffer.data[i];
+    }
+
+    frame.length = buffer.can_dlc;
+    return 0;
 }
 
 
-/*!
- * @brief Remplir un object "can_mess_t" à partir d'un objet "can_frame"
- * @param response L'objet à remplir
- * @param frame Le message reçu
- * @return Un code d'erreur
- */
-int Can::format_frame(can_mess_t &response, can_frame& frame) const {
-    if (read(sock, &frame, sizeof(struct can_frame)) < 0) {
-        perror("Read");
-        return CAN_E_READ_ERROR;
+int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
+    auto start = std::chrono::steady_clock::now();
+
+    while (true) {
+        mutex.lock();
+        auto response = responses.find(messageID);
+
+        if (response != responses.end()) {
+            frame = response->second;
+            responses.erase(response);
+            mutex.unlock();
+            return 0;
+        }
+
+        mutex.unlock();
+        uint32_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - start
+        ).count();
+
+        if (elapsed > duration) {
+            logger << "Timeout lors de l'attente d'une réponse" << mendl;
+            return -1;
+        }
+    }
+}
+
+
+int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length, uint8_t messageID, bool isResponse) {
+    if (length > 8) {
+        logger << "Taille du message trop grande : " << length << mendl;
+        return -1;
     }
 
-    if (frame.can_dlc > 8)
-        return CAN_E_DATA_SIZE_TOO_LONG;
+    can_frame buffer{};
 
-    response.recv_addr = (frame.can_id & CAN_FILTER_ADDR_EMETTEUR);
-    response.emit_addr = (frame.can_id &  CAN_FILTER_ADDR_RECEPTEUR);
-    response.fct_code = (frame.can_id & CAN_FILTER_CODE_FCT);
-    response.is_rep = (frame.can_id & CAN_FILTER_IS_REP) >> CAN_DECALAGE_IS_REP;
-    response.rep_id = (frame.can_id & CAN_FILTER_REP_NBR);
-    response.data_len = frame.can_dlc;
+    buffer.can_dlc = length;
+    memcpy(buffer.data, data, length);
 
-    for (int i = 0; i < frame.can_dlc; i++){
-        if(frame.data[i] < 0 || frame.data[i] > 255)
-            return CAN_E_OOB_DATA;
+    buffer.can_id = CAN_ADDR_RASPBERRY << CAN_OFFSET_EMIT_ADDR |
+                    dest << CAN_OFFSET_RECEIVER_ADDR |
+                    functionCode << CAN_OFFSET_FUNCTION_CODE |
+                    messageID << CAN_OFFSET_MESSAGE_ID |
+                    isResponse;
 
-        response.data[i] = frame.data[i];
+    if (::write(socket, &buffer, sizeof(struct can_frame)) < 0) {
+        logger << "Impossible d'écrire dans le buffer";
+        printError(logger);
+        return -1;
     }
 
     return 0;
 }
 
 
-/*!
- * @brief  Envoyer un message sur le bus CAN
- * @param  addr L'adresse du récepteur
- * @param  fct_code Le code fonction
- * @param  data Les données à envoyer
- * @param  data_len La taille des données
- * @param  is_rep Si le message est une réponse
- * @param  rep_len Le nombre de réponses attendues
- * @param  msg_id L'identifiant du message
- * @return 0 ou un code d'erreur
- */
-int Can::send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t *data, uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id) {
-    if (data_len > 8) {
-        logger << "Vous ne pouvez envoyer que 8 octets de data" << mendl;
-        return CAN_E_DATA_SIZE_TOO_LONG;
-    }
-
-    can_frame frame{};
-    frame.can_dlc = data_len;
-    frame.can_id = (uint8_t) addr | CAN_ADDR_BASE_ROULANTE_E | fct_code | rep_len | msg_id << CAN_DECALAGE_ID_MSG | is_rep << CAN_DECALAGE_IS_REP | CAN_EFF_FLAG;
-
-    logger << "SEND: ";
-    logger << "   recv_addr : " << hex << showbase << addr;
-    logger << "   emit_addr : " << CAN_ADDR_RASPBERRY_E;
-    logger << "   fct_code : " << fct_code;
-    logger << "   rep_id : " << msg_id;
-    logger << "   is_rep : " << is_rep;
-    logger << "   data : ["<< data_len <<"] ";
-
-    for (int i = 0; i < data_len; i++) {
-        if(data[i] <0 || data[i] > 255)
-            return CAN_E_OOB_DATA;
-
-        frame.data[i] = data[i];
-        logger << hex << showbase << (int) data[i] << " ";
-    }
-
-    logger << mendl;
-
-    if (write(sock, &frame, sizeof(struct can_frame)) != sizeof(struct can_frame)) {
-        perror("Write");
-        return CAN_E_WRITE_ERROR;
-    }
-
-    return 0;
+void Can::bind(uint8_t functionCode, can_callback callback) {
+    callbacks[functionCode] = callback;
 }
 
 
-void Can::close() {
-    ::close(sock);
-    is_listening = false;
-    listen_thread->join();
+Can::~Can() {
+    if (!isListening) return;
+
+    isListening = false;
+    ::close(socket);
+    listenerThread->join();
 }

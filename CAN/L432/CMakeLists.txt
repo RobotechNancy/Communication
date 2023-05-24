@@ -49,7 +49,8 @@ else ()
     add_compile_options(-Og -g)
 endif ()
 
-include_directories(/usr/local/include/ Core/Inc Drivers/STM32L4xx_HAL_Driver/Inc Drivers/STM32L4xx_HAL_Driver/Inc/Legacy Drivers/CMSIS/Device/ST/STM32L4xx/Include Drivers/CMSIS/Include)
+include_directories(Core/Inc Drivers/STM32L4xx_HAL_Driver/Inc Drivers/STM32L4xx_HAL_Driver/Inc/Legacy
+                    Drivers/CMSIS/Device/ST/STM32L4xx/Include Drivers/CMSIS/Include ${CMAKE_INSTALL_PREFIX}/include/robotech)
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32L432xx)
 

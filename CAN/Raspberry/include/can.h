@@ -1,63 +1,59 @@
 /*!
- * @file can.h
- * @version 1.0
+ * @file can.cpp
+ * @version 1.2
  * @date 2022-2023
  * @author Julien PISTRE
- * @brief Fichier d'en-tête de la classe Can
- * @details Version modifiée de la librairie de Théo RUSINOWITCH (v4.1a)
+ * @brief Header de la classe Can
+ * @details Version modifiée de la librairie de Théo RUSINOWITCH (v1)
  */
 
-#ifndef RASPBERRY_H
-#define RASPBERRY_H
+#ifndef RASPI_CAN_H
+#define RASPI_CAN_H
 
 #include <map>
+#include <mutex>
 #include <memory>
 #include <thread>
-#include <cstring>
-#include <unistd.h>
-#include <functional>
-
-#include <net/if.h>
-#include <iostream>
+#include <atomic>
 #include <linux/can.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <linux/can/raw.h>
 
-#include "can_vars.h"
+#include "define_can.h"
 #include "robotech/logs.h"
 
 
-// Type d'une fonction qui gère un code fonction
-typedef std::function<void(const can_mess_t&)> can_callback_t;
+// Type des fonctions de callback
+typedef void (*can_callback)(const can_message_t &frame);
 
 /*!
- * @class Can
- * @brief Classe permettant de gérer la communication CAN
+ * @brief Classe permettant de gérer le bus CAN
+ * @details Cette classe permet d'initialiser le bus CAN, de l'écouter et d'envoyer des messages
  */
 class Can {
-private:
-    Logger logger;
+public:
+    int init(can_address_t address);
+    ~Can();
 
-    int sock;
-    std::atomic<bool> is_listening;
-    std::map<uint32_t, can_mess_t> responses;
-    std::unique_ptr<std::thread> listen_thread;
-    std::map<uint32_t, can_callback_t> listeners;
+
+    int startListening();
+    void print(const can_message_t &frame);
+    void bind(uint8_t functionCode, can_callback callback);
+    int waitFor(can_message_t &frame, uint8_t responseId, uint32_t timeout);
+    int send(uint8_t address, uint8_t functionCode, uint8_t *data, uint8_t length, uint8_t messageID, bool isResponse);
+private:
+    int socket{};
+    can_address_t address{};
+    Logger logger{"CAN", "can.log"};
+
+    std::mutex mutex;                                     // Mutex pour éviter les problèmes de concurrence
+    std::map<uint8_t, can_message_t> responses;
+
+    std::atomic<bool> isListening{false};                 // Atomic pour éviter les problèmes de concurrence
+    std::map<uint8_t, can_callback> callbacks;
+    std::unique_ptr<std::thread> listenerThread{nullptr}; // unique_ptr pour pouvoir delete le thread au destructeur
 
     void listen();
-    int format_frame(can_mess_t &response, can_frame& frame) const;
-public:
-    explicit Can();
-    int init();
-
-    void subscribe(uint32_t fct_code, const can_callback_t& callback);
-    int send(CAN_ADDR addr, CAN_FCT_CODE fct_code, uint8_t data[], uint8_t data_len, bool is_rep, uint8_t rep_len, uint8_t msg_id);
-
-    void start_listen();
-    can_mess_t wait_for_response(CAN_FCT_CODE fct_code, uint32_t timeout);
-    void close();
-
+    int readBuffer(can_message_t& frame, can_frame &buffer);
 };
 
-#endif //RASPBERRY_H
+
+#endif //RASPI_CAN_H

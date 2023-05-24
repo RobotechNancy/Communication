@@ -1,28 +1,23 @@
-//
-// Created by mrspaar on 1/20/23.
-//
-
 #include "can.h"
+
+
+void handleAcknowledge(const can_message_t &frame) {
+    if (frame.data[0] == 0x01)
+        std::cout << "ACK" << std::endl;
+    else
+        std::cout << "NACK" << std::endl;
+}
+
 
 int main() {
     Can can;
-    int err;
 
-    if ((err = can.init()) < 0) {
-        std::cerr << "Erreur lors de l'initialisation du bus CAN (n°" << err << ")" << std::endl;
-        return err;
-    }
+    if (can.init(CAN_ADDR_RASPBERRY) < 0)
+        return 1;
 
-    can.subscribe(FCT_ACCUSER_RECPETION, [](const can_mess_t& message) {
-       std::cout << "Bonjour !" << std::endl;
-    });
+    can.bind(FCT_ACCUSER_RECPETION, handleAcknowledge);
+    can.startListening();
 
-    can.start_listen();
-
-    do {
-        std::cout << "Appuyez sur 'q' pour quitter" << std::endl;
-    } while (std::cin.get() != 'q');
-
-    can.close();
+    std::this_thread::sleep_for(std::chrono::seconds(10));
     return 0;
 }
