@@ -44,20 +44,20 @@ int Can::init(can_address_t myAddress) {
     strcpy(ifr.ifr_name, CAN_INTERFACE);
 
     if (::ioctl(socket, SIOCGIFFLAGS, &ifr) < 0) {
-        logger << "Impossible de récupérer les flags de l'interface " << CAN_INTERFACE;
+        logger(CRITICAL) << "Impossible de récupérer les flags de l'interface " << CAN_INTERFACE;
         printError(logger);
         return -1;
     }
 
     // Vérification de l'état de l'interface
     if ((ifr.ifr_flags & IFF_UP) == 0) {
-        logger << "Interface " << CAN_INTERFACE << " down" << std::endl;
+        logger(ERROR) << "Interface " << CAN_INTERFACE << " down" << std::endl;
         return -1;
     }
 
     // Récupération de l'index de l'interface
     if (::ioctl(socket, SIOCGIFINDEX, &ifr) < 0) {
-        logger << "Impossible de récupérer l'index de l'interface " << CAN_INTERFACE;
+        logger(CRITICAL) << "Impossible de récupérer l'index de l'interface " << CAN_INTERFACE;
         printError(logger);
         return -1;
     }
@@ -67,7 +67,7 @@ int Can::init(can_address_t myAddress) {
     addr.can_ifindex = ifr.ifr_ifindex;
 
     if (::bind(socket, (sockaddr *) &addr, sizeof(addr)) < 0) {
-        logger << "Impossible de bind le socket";
+        logger(CRITICAL) << "Impossible de bind le socket";
         printError(logger);
         return -1;
     }
@@ -82,7 +82,7 @@ int Can::init(can_address_t myAddress) {
  * @param frame Message à afficher
  */
 void Can::print(const can_message_t &frame) {
-    logger << "Message reçu :\n" << std::hex << std::showbase
+    logger(INFO) << "Message reçu :\n" << std::hex << std::showbase
            << "  - Adresse émetteur : " << (int) frame.senderAddress << "\n"
            << "  - Adresse récepteur : " << (int) frame.receiverAddress << "\n"
            << "  - Code fonction : " << (int) frame.functionCode << "\n"
@@ -101,14 +101,14 @@ void Can::print(const can_message_t &frame) {
  */
 int Can::startListening() {
     if (isListening) {
-        logger << "Le socket est déjà en écoute" << std::endl;
+        logger(WARNING) << "Le socket est déjà en écoute" << std::endl;
         return -1;
     }
 
     isListening = true;
     listenerThread = std::make_unique<std::thread>(&Can::listen, this);
 
-    logger << "Le bus CAN est sous écoute" << std::endl;
+    logger(INFO) << "Le bus CAN est sous écoute" << std::endl;
     return 0;
 }
 
@@ -135,7 +135,7 @@ void Can::listen() {
 
         // status < 0 signifie qu'une erreur est survenue
         if (status < 0) {
-            logger << "Erreur lors de la lecture du socket";
+            logger(ERROR) << "Erreur lors de la lecture du socket";
             printError(logger);
             continue;
         }
@@ -159,7 +159,7 @@ void Can::listen() {
         } else if (callback != callbacks.end()) {
             callback->second(frame);
         } else {
-            logger << "Code fonction non traité : " << frame.functionCode << std::endl;
+            logger(WARNING) << "Code fonction non traité : " << frame.functionCode << std::endl;
         }
     }
 }
@@ -168,13 +168,13 @@ void Can::listen() {
 int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
     // Lecture du buffer
     if (::read(socket, &buffer, sizeof(struct can_frame)) < 0) {
-        logger << "Impossible de lire le buffer";
+        logger(ERROR) << "Impossible de lire le buffer";
         printError(logger);
         return -1;
     }
 
     if (buffer.can_dlc > 8) {
-        logger << "Taille du message trop grande : " << buffer.can_dlc << std::endl;
+        logger(WARNING) << "Taille du message trop grande : " << buffer.can_dlc << std::endl;
         return -1;
     }
 
@@ -229,7 +229,7 @@ int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
         ).count();
 
         if (elapsed > duration) {
-            logger << "Timeout lors de l'attente d'une réponse" << std::endl;
+            logger(WARNING) << "Timeout lors de l'attente d'une réponse" << std::endl;
             return -1;
         }
     }
@@ -248,7 +248,7 @@ int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
  */
 int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length, uint8_t messageID, bool isResponse) {
     if (length > 8) {
-        logger << "Taille du message trop grande : " << length << std::endl;
+        logger(WARNING) << "Taille du message trop grande : " << length << std::endl;
         return -1;
     }
 
@@ -263,7 +263,7 @@ int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length,
                     isResponse;
 
     if (::write(socket, &buffer, sizeof(struct can_frame)) < 0) {
-        logger << "Impossible d'écrire dans le buffer";
+        logger(ERROR) << "Impossible d'écrire dans le buffer";
         printError(logger);
         return -1;
     }
@@ -291,4 +291,5 @@ Can::~Can() {
     isListening = false;
     ::close(socket);
     listenerThread->join();
+    logger(INFO) << "Arrêt du bus CAN" << std::endl;
 }

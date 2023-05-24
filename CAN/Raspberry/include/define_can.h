@@ -58,7 +58,7 @@ typedef enum {
     FCT_LACHER_GATEAU =       0x58,
 
     FCT_ACCUSER_RECPETION =	  0xFF,
-} function_code_t;
+} can_code_t;
 
 
 // Masques et décalages pour extraire les informations d'un message CAN
