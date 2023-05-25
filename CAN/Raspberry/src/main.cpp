@@ -12,18 +12,14 @@ void handleAcknowledge(const can_message_t &frame) {
 int main() {
     Can can;
 
-    if (can.init(CAN_ADDR_RASPBERRY) < 0)
+    if (can.init(CAN_ADDR_BASE_ROULANTE) < 0)
         return 1;
 
     can.bind(FCT_ACCUSER_RECPETION, handleAcknowledge);
     can.startListening();
 
     uint8_t data[1] = {0x01};
-    can.send(CAN_ADDR_BASE_ROULANTE, FCT_ACCUSER_RECPETION, data, 1, 1, false);
-
-    can.send(CAN_ADDR_ODOMETRIE, FCT_GET_VARIATION_XY, nullptr, 0, 1, false);
-    can_message_t frame;
-    can.waitFor(frame, 1, 5000);
+    can.send(CAN_ADDR_RASPBERRY, FCT_ACCUSER_RECPETION, data, 1, 1, false);
 
     std::this_thread::sleep_for(std::chrono::seconds(10));
     return 0;

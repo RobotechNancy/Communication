@@ -55,6 +55,19 @@ int Can::init(can_address_t myAddress) {
         return -1;
     }
 
+    // Récupération de l'adresse Hardware de l'interface
+    if (::ioctl(socket, SIOCGIFHWADDR, &ifr) < 0) {
+        logger(CRITICAL) << "Impossible de récupérer l'adresse Hardware de l'interface " << CAN_INTERFACE;
+        printError(logger);
+        return -1;
+    }
+
+    logger(INFO) << "Adresse Hardware de l'interface " << CAN_INTERFACE << " : ";
+    for (int i = 0; i < 6; i++) {
+        logger << std::hex << std::showbase << (int) ifr.ifr_hwaddr.sa_data[i] << " ";
+    }
+    logger << std::dec << std::endl;
+
     // Récupération de l'index de l'interface
     if (::ioctl(socket, SIOCGIFINDEX, &ifr) < 0) {
         logger(CRITICAL) << "Impossible de récupérer l'index de l'interface " << CAN_INTERFACE;
@@ -72,7 +85,7 @@ int Can::init(can_address_t myAddress) {
         return -1;
     }
 
-    logger << "Bus CAN initialisé" << std::endl;
+    logger(INFO) << "Bus CAN initialisé" << std::endl;
     return 0;
 }
 
@@ -124,7 +137,7 @@ void Can::listen() {
             .tv_usec = 0
     };
 
-    int status = 0;
+    int status;
     can_frame buffer{};
     can_message_t frame{};
 
@@ -133,14 +146,13 @@ void Can::listen() {
         FD_SET(socket, &rds);   // On ajoute le socket au set de lecture
         status = ::select(socket + 1, &rds, nullptr, nullptr, &timeout); // On attend qu'un socket soit prêt
 
-        // status < 0 signifie qu'une erreur est survenue
         if (status < 0) {
             logger(ERROR) << "Erreur lors de la lecture du socket";
             printError(logger);
             continue;
         }
 
-        // status == 0 signifie que le timeout est arrivé à expiration
+        // Le socket n'est pas prêt
         if (status == 0) {
             continue;
         }
@@ -268,6 +280,7 @@ int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length,
         return -1;
     }
 
+    logger(INFO) << "Message envoyé : " << std::showbase << std::hex << buffer.can_id << std::endl;
     return 0;
 }
 
@@ -286,10 +299,13 @@ void Can::bind(uint8_t functionCode, can_callback callback) {
  * @brief Destruction de l'objet, ferme le socket et arrête le thread
  */
 Can::~Can() {
-    if (!isListening) return;
+    if (!isListening) {
+        return;
+    }
 
     isListening = false;
-    ::close(socket);
     listenerThread->join();
+
+    ::close(socket);
     logger(INFO) << "Arrêt du bus CAN" << std::endl;
 }
