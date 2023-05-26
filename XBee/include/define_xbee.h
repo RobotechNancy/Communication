@@ -121,7 +121,7 @@
 typedef struct {
     uint8_t startDelimiter;
     uint8_t length;
-    uint8_t emitAddress;
+    uint8_t emitterAddress;
     uint8_t receiverAddress;
     uint8_t frameId;
     uint8_t functionCode;

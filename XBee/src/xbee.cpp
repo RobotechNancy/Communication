@@ -305,7 +305,7 @@ int XBee::processFrame(const uint8_t *buffer) {
     xbee_frame_t frame = {
             .startDelimiter = buffer[0],
             .length = buffer[1],
-            .emitAddress = buffer[2],
+            .emitterAddress = buffer[2],
             .receiverAddress = buffer[3],
             .frameId = buffer[4],
             .functionCode = buffer[5],

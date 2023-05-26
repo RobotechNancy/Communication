@@ -11,7 +11,7 @@
 
 
 void alive(const xbee_frame_t &frame) {
-    std::cout << "Requête de " << std::showbase << std::hex << frame.emitAddress << std::endl;
+    std::cout << "Requête de " << std::showbase << std::hex << frame.emitterAddress << std::endl;
     std::cout << "Données : " << std::endl;
 
     for (int i = 0; i < frame.length - XB_FRAME_DEFAULT_LENGTH - 2; i++) {
