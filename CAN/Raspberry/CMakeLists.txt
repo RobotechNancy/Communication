@@ -23,4 +23,5 @@ install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}.pc DESTINATION ${CMAKE_INSTALL
 
 ################################################### TESTING ###################################################
 add_executable(${PROJECT_NAME}_test src/main.cpp src/can.cpp)
+target_link_libraries(${PROJECT_NAME}_test Threads::Threads)
 target_include_directories(${PROJECT_NAME}_test PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
