@@ -294,10 +294,7 @@ int XBee::processFrame(const uint8_t *buffer) {
     }
 
     logger(INFO) << "Trame reçue :" << std::endl;
-    for (int i = 0; i < length; i++) {
-        logger(INFO) << std::showbase << std::hex << (int) buffer[i] << " ";
-    }
-    //printFrame(buffer, length);
+    printFrame(buffer, length);
 
     uint16_t checksum = buffer[length - 1] << 8 | buffer[length - 2];
     if (checksum != computeChecksum(buffer, length - 2)) {
