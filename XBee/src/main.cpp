@@ -8,19 +8,26 @@
  */
 
 #include "xbee.h"
-using namespace std;
 
+
+void alive(const xbee_frame_t &frame) {
+    std::cout << "Test alive received" << std::endl;
+}
 
 int main() {
-    XBee xbee(XB_ADDR_ROBOT_01);
+    XBee xbee(XB_ADDR_CAMERA_01);
     int status = xbee.open("/dev/ttyUSB0");
 
     if (status != XB_SER_E_SUCCESS) {
         return status;
     }
 
-    uint8_t data[1] = {0x05};
-    xbee.send(XB_ADDR_CAMERA_01, XB_FCT_TEST_ALIVE, data, 1);
+    //uint8_t data[1] = {0x05};
+    //xbee.send(XB_ADDR_CAMERA_01, XB_FCT_TEST_ALIVE, data, 1);
 
+    xbee.bind(XB_FCT_TEST_ALIVE, alive);
+    xbee.startListening();
+
+    std::this_thread::sleep_for(std::chrono::seconds(120));
     return XB_E_SUCCESS;
 }

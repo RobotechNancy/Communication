@@ -236,7 +236,7 @@ void XBee::printFrame(const uint8_t *frame, uint8_t length) {
 void XBee::startListening() {
     isListening = true;
     listenerThread = std::make_unique<std::thread>(&XBee::listen, this);
-    logger(INFO) << "Thread d'écoute démarré'" << std::endl;
+    logger(INFO) << "Thread d'écoute démarré" << std::endl;
 }
 
 void XBee::listen() {
@@ -260,14 +260,12 @@ int XBee::processBuffer(std::vector<uint8_t> &response) {
         auto it = std::find(response.begin(), response.end(), XB_V_START);
 
         if (it == response.end() || response.size() < XB_FRAME_DEFAULT_LENGTH) {
-            logger(ERROR) << "Aucun début de trame ou trame trop courte" << std::endl;
             break;
         }
 
         auto it2 = std::find(it + 1, response.end(), XB_V_START);
 
         if (it2 - it < XB_FRAME_DEFAULT_LENGTH) {
-            logger(ERROR) << "Trame reçue incomplète" << std::endl;
             continue;
         }
 
@@ -289,7 +287,7 @@ int XBee::processFrame(const uint8_t *buffer) {
         return XB_TRAME_E_DATALEN;
     }
 
-    if (address != buffer[2]) {
+    if (address != buffer[3]) {
         logger(WARNING) << "La trame reçue n'est pas destinée à ce module" << std::endl;
         return XB_TRAME_E_WRONG_ADR;
     }
