@@ -28,6 +28,6 @@ int main() {
     xbee.bind(XB_FCT_TEST_ALIVE, alive);
     xbee.startListening();
 
-    std::this_thread::sleep_for(std::chrono::seconds(120));
+    std::this_thread::sleep_for(std::chrono::seconds(10));
     return XB_E_SUCCESS;
 }

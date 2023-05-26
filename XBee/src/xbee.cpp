@@ -294,7 +294,10 @@ int XBee::processFrame(const uint8_t *buffer) {
     }
 
     logger(INFO) << "Trame reçue :" << std::endl;
-    printFrame(buffer, length);
+    for (int i = 0; i < length; i++) {
+        logger(INFO) << std::showbase << std::hex << (int) buffer[i] << " ";
+    }
+    //printFrame(buffer, length);
 
     uint16_t checksum = buffer[length - 1] << 8 | buffer[length - 2];
     if (checksum != computeChecksum(buffer, length - 2)) {
@@ -354,7 +357,7 @@ int XBee::send(uint8_t dest, uint8_t functionCode, const uint8_t *data, uint8_t 
     uint8_t frame[frameLen];
 
     frame[0] = XB_V_START;
-    frame[1] = dataLength;
+    frame[1] = frameLen;
     frame[2] = address;
     frame[3] = dest;
     frame[4] = ++totalFrames;
