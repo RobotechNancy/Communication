@@ -12,17 +12,15 @@ using namespace std;
 
 
 int main() {
-    XBee xbee(XB_ADR_ROBOT_01);
-    int status = xbee.openSerialConnection("/dev/ttyUSB0");
+    XBee xbee(XB_ADDR_ROBOT_01);
+    int status = xbee.open("/dev/ttyUSB0");
 
     if (status != XB_SER_E_SUCCESS) {
-        cout << "Erreur à l'établissement de la connection série : " << status << endl;
         return status;
     }
 
-    vector<::uint8_t> data = {0x05};
-    xbee.sendFrame(XB_ADR_CAMERA_01, XB_FCT_TEST_ALIVE, data, 1);
+    uint8_t data[1] = {0x05};
+    xbee.send(XB_ADDR_CAMERA_01, XB_FCT_TEST_ALIVE, data, 1);
 
-    xbee.closeSerialConnection();
     return XB_E_SUCCESS;
 }

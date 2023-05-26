@@ -7,24 +7,24 @@ using namespace std;
 
 
 void test_alive_callback(const xbee_frame_t& frame) {
-    cout << "Test alive reçu de " << frame.adr_emetteur << endl;
+    cout << "Test alive reçu de " << frame.emitAddress << endl;
 }
 
 int main() {
     XBee xbee(XB_ADR_ROBOT_1);
-    int status = xbee.openSerialConnection("/dev/ttyUSB0");
+    int status = xbee.open("/dev/ttyUSB0");
 
     if (status != XB_SER_E_SUCCESS) {
         cout << "Erreur à l'établissement de la connection série : " << status << endl;
         return status;
     }
 
-    // Alternative : xbee.subscribe(XB_FCT_TEST_ALIVE, test_alive_callback);
-    xbee.subscribe(XB_FCT_TEST_ALIVE, [&](const xbee_frame_t& frame) {
-         cout << "Test alive reçu de " << (int) frame.adr_emetteur << endl;
+    // Alternative : xbee.bind(XB_FCT_TEST_ALIVE, test_alive_callback);
+    xbee.bind(XB_FCT_TEST_ALIVE, [&](const xbee_frame_t& frame) {
+         cout << "Test alive reçu de " << (int) frame.emitAddress << endl;
     });
 
-    xbee.start_listen();
+    xbee.startListening();
     while (cin.get() == 'q'); // Attendre la touche 'q' pour quitter
 
     xbee.closeSerialConnection();
