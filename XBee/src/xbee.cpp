@@ -280,7 +280,8 @@ int XBee::processBuffer(std::vector<uint8_t> &response) {
 }
 
 int XBee::processFrame(const uint8_t *buffer) {
-    int length = buffer[1];
+    uint8_t length = buffer[1];
+    uint8_t dataLength = length - XB_FRAME_DATA_SHIFT - 2;
 
     if (length > XB_FRAME_MAX_SIZE) {
         logger(ERROR) << "La trame reçue dépasse la limite de " << XB_FRAME_MAX_SIZE << " octets" << std::endl;
@@ -308,10 +309,11 @@ int XBee::processFrame(const uint8_t *buffer) {
             .receiverAddress = buffer[3],
             .frameId = buffer[4],
             .functionCode = buffer[5],
+            .data = new uint8_t[dataLength],
             .checksum = checksum,
     };
 
-    for (uint8_t i = 0; i < frame.length; i++) {
+    for (uint8_t i = 0; i < dataLength; i++) {
         frame.data[i] = buffer[XB_FRAME_DATA_SHIFT + i];
     }
 
@@ -321,6 +323,7 @@ int XBee::processFrame(const uint8_t *buffer) {
         responses[frame.frameId] = frame;
     }
 
+    delete[] frame.data;
     return XB_SUBTRAME_E_SUCCESS;
 }
 
