@@ -12,7 +12,7 @@
 int main() {
     Logger logger("test", "../logs.log");
 
-    logger(Log::INFO) << "Hello, World!" << std::endl;
+    logger << "Hello, World!" << std::endl;
     logger(Log::WARNING) << "Hello, World! " << 2 << std::endl;
     logger(Log::NONE) << "Hello, World! " << 3 << std::endl;
 

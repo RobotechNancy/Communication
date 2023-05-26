@@ -77,7 +77,7 @@ public:
         log << "[" << std::setfill('0') << std::setw(2) << ltm->tm_hour << ":"
             << std::setfill('0') << std::setw(2) << ltm->tm_min << ":"
             << std::setfill('0') << std::setw(2) << ltm->tm_sec << "]"
-            << "[" << name << "]";
+            << "[" << name << "] ";
 
         log << ss.str();
         ss.str("");
