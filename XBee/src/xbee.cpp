@@ -214,7 +214,7 @@ bool XBee::writeATConfig() {
 
 void XBee::printBuffer(const uint8_t *frame, uint8_t length) {
     for (int i = 0; i < length; i++) {
-        logger(INFO) << std::showbase << std::hex << (int) frame[XB_FRAME_DATA_SHIFT + i] << " ";
+        logger(INFO) << std::showbase << std::hex << (int) frame[i] << " ";
     }
 
     logger(INFO) << std::endl;
@@ -353,8 +353,9 @@ int XBee::send(uint8_t dest, uint8_t functionCode, const uint8_t *data, uint8_t 
     }
 
     uint16_t dataChecksum = computeChecksum(data, dataLength);
-    frame[frameLen - 2] = dataChecksum & 0xFF;
-    frame[frameLen - 1] = dataChecksum >> 8;
+    frame[frameLen - 3] = dataChecksum & 0xFF;
+    frame[frameLen - 2] = dataChecksum >> 8;
+    frame[frameLen - 1] = XB_FRAME_EOT;
 
     serial.writeBytes(frame, frameLen);
 
