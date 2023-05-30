@@ -11,12 +11,13 @@
 #define XBEE_H
 
 #include <map>
+#include <mutex>
 #include <memory>
 #include <string>
-#include <iomanip>
 #include <chrono>
 #include <thread>
 #include <atomic>
+#include <iomanip>
 #include <iterator>
 #include <functional>
 #include <robotech/logs.h>
