@@ -234,7 +234,7 @@ void XBee::startListening() {
     isListening = true;
 
     listenerThread = std::make_unique<std::thread>(&XBee::listen, this);
-    queueThread = std::make_unique<std::thread>(&XBee::processQueue, this);
+    //queueThread = std::make_unique<std::thread>(&XBee::processQueue, this);
 
     logger(INFO) << "Thread d'écoute démarré" << std::endl;
 }
@@ -292,11 +292,14 @@ int XBee::processBuffer(std::vector<uint8_t> &response) {
         return XB_E_FRAME_CRC_DATA;
     }
 
-    processFrame(response.data(), dataLength);
-    return XB_E_SUCCESS;
+    return processFrame(response.data(), dataLength);
 }
 
 int XBee::processFrame(const uint8_t *buffer, const uint8_t &dataLength) {
+    if (buffer[3] != address) {
+        return XB_E_FRAME_ADDR;
+    }
+
     xbee_frame_t frame = {
             .receiverAddress = buffer[3],
             .emitterAddress = buffer[2],
@@ -309,9 +312,9 @@ int XBee::processFrame(const uint8_t *buffer, const uint8_t &dataLength) {
         frame.data[i] = buffer[XB_FRAME_DATA_SHIFT + i];
     }
 
-    queueMutex.lock();
-    queue.push_back(frame);
-    queueMutex.unlock();
+    //queueMutex.lock();
+    //queue.push_back(frame);
+    //queueMutex.unlock();
 
     logger(INFO) << "Trame ajoutée à la file d'attente" << std::endl;
     return XB_E_SUCCESS;

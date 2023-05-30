@@ -79,7 +79,7 @@ typedef struct {
 
 #define XB_E_SUCCESS               000
 
-#define XB_E_FRAME_NOT_FOUND       (-201)
+#define XB_E_FRAME_ADDR            (-201)
 #define XB_E_FRAME_LENGTH          (-202)
 #define XB_E_FRAME_CORRUPTED       (-203)
 #define XB_E_FRAME_DATA_LENGTH     (-204)
