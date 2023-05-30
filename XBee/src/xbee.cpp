@@ -17,7 +17,7 @@ int XBee::open(const char* port) {
             port, XB_BAUDRATE_PRIMARY, XB_DATABITS_PRIMARY, XB_PARITY_PRIMARY, XB_STOPBITS_PRIMARY
     );
 
-    if (status != XB_SER_E_SUCCESS) {
+    if (status != XB_E_SUCCESS) {
         logger(CRITICAL) << "Impossible d'ouvrir le port " << port
                                                            << " - baudrate : " << XB_BAUDRATE_PRIMARY
                                                            << " - parités : " << XB_PARITY_PRIMARY
@@ -33,7 +33,7 @@ int XBee::open(const char* port) {
     if ((status = checkATConfig()) < 0)
         return status;
 
-    return XB_SER_E_SUCCESS;
+    return XB_E_SUCCESS;
 }
 
 
@@ -42,7 +42,7 @@ int XBee::checkATConfig() {
         logger(INFO) << "Entrée dans le mode AT" << std::endl;
     else {
         logger(CRITICAL) << "Impossible d'entrer dans le mode AT" << std::endl;
-        return XB_AT_E_ENTER;
+        return XB_E_AT_ENTER;
     }
 
     if (sendATCommand(XB_AT_CMD_BAUDRATE, XB_AT_V_BAUDRATE, XB_AT_M_GET))
@@ -51,7 +51,7 @@ int XBee::checkATConfig() {
         logger(INFO) << "Baudrate configuré avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer le baudrate" << std::endl;
-        return XB_AT_E_BAUDRATE;
+        return XB_E_AT_BAUDRATE;
     }
 
     if (sendATCommand(XB_AT_CMD_PARITY, XB_AT_V_PARITY, XB_AT_M_GET))
@@ -60,7 +60,7 @@ int XBee::checkATConfig() {
         logger(INFO) << "Nombre de bits de parité configuré avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer la parité" << std::endl;
-        return XB_AT_E_PARITY;
+        return XB_E_AT_PARITY;
     }
 
     if (sendATCommand(XB_AT_CMD_API, XB_AT_V_API, XB_AT_M_GET))
@@ -69,7 +69,7 @@ int XBee::checkATConfig() {
         logger(INFO) << "Mode API configuré avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer le mode API" << std::endl;
-        return XB_AT_E_API;
+        return XB_E_AT_API;
     }
 
     if (sendATCommand(XB_AT_CMD_AES, XB_AT_V_AES, XB_AT_M_GET))
@@ -78,14 +78,14 @@ int XBee::checkATConfig() {
         logger(INFO) << "Chiffrement AES configuré avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer le paramètre de chiffrement AES" << std::endl;
-        return XB_AT_E_AES;
+        return XB_E_AT_AES;
     }
 
     if (sendATCommand(XB_AT_CMD_AES_KEY, XB_AT_V_AES_KEY))
         logger(INFO) << "Clé de chiffrement configurée avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer la clé de chiffrement AES" << std::endl;
-        return XB_AT_E_AES_KEY;
+        return XB_E_AT_AES_KEY;
     }
 
     if (sendATCommand(XB_AT_CMD_CHANEL, XB_AT_V_CHANEL, XB_AT_M_GET))
@@ -94,7 +94,7 @@ int XBee::checkATConfig() {
         logger(INFO) << "Canal de découverte réseau configuré avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer le canal de découverte réseau" << std::endl;
-        return XB_AT_E_CHANEL;
+        return XB_E_AT_CHANEL;
     }
 
     if (sendATCommand(XB_AT_CMD_PAN_ID, XB_AT_V_PAN_ID, XB_AT_M_GET))
@@ -103,7 +103,7 @@ int XBee::checkATConfig() {
         logger(INFO) << "ID du réseau configuré avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer l'ID du réseau" << std::endl;
-        return XB_AT_E_PAN_ID;
+        return XB_E_AT_PAN_ID;
     }
 
     const char* coordinator = (address == 1) ? XB_AT_V_COORDINATOR : XB_AT_V_END_DEVICE;
@@ -114,7 +114,7 @@ int XBee::checkATConfig() {
         logger(INFO) << "Mode coordinateur configuré avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer le mode coordinateur" << std::endl;
-        return XB_AT_E_COORDINATOR;
+        return XB_E_AT_COORDINATOR;
     }
 
     char addr[3];
@@ -126,7 +126,7 @@ int XBee::checkATConfig() {
         logger(INFO) << "Adresse source 16bits configurée avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer l'adresse source 16bits" << std::endl;
-        return XB_AT_E_16BIT_SOURCE_ADDR;
+        return XB_E_AT_16BIT_SOURCE_ADDR;
     }
 
     if (sendATCommand(XB_AT_CMD_LOW_DEST_ADDR, XB_AT_V_LOW_DEST_ADDR, XB_AT_M_GET))
@@ -135,7 +135,7 @@ int XBee::checkATConfig() {
         logger(INFO) << "Adresse de destination configurée avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer l'adresse de destination" << std::endl;
-        return XB_AT_E_LOW_DEST_ADDR;
+        return XB_E_AT_LOW_DEST_ADDR;
     }
 
     if (sendATCommand(XB_AT_CMD_HIGH_DEST_ADDR, XB_AT_V_HIGH_DEST_ADDR, XB_AT_M_GET))
@@ -144,24 +144,24 @@ int XBee::checkATConfig() {
         logger(INFO) << "Adresse de destination configurée avec succès" << std::endl;
     else {
         logger(CRITICAL) << "Impossible de configurer l'adresse de destination" << std::endl;
-        return XB_AT_E_LOW_DEST_ADDR;
+        return XB_E_AT_HIGH_DEST_ADDR;
     }
 
     if (writeATConfig())
         logger(INFO) << "Configuration AT enregistrée dans la mémoire du module" << std::endl;
     else {
         logger(CRITICAL) << "Impossible d'écrire les paramètres dans la mémoire flash" << std::endl;
-        return XB_AT_E_WRITE_CONFIG;
+        return XB_E_AT_WRITE_CONFIG;
     }
 
     if (!exitATMode()) {
         logger(CRITICAL) << "Impossible de sortir du mode AT" << std::endl;
-        return XB_AT_E_EXIT;
+        return XB_E_AT_EXIT;
     }
 
     serial.flushReceiver();
     logger(INFO) << "Configuration AT réalisée avec succès" << std::endl;
-    return XB_AT_E_SUCCESS;
+    return XB_E_SUCCESS;
 }
 
 bool XBee::sendATCommand(const char *command, const char *value, bool mode) {
@@ -212,10 +212,6 @@ bool XBee::writeATConfig() {
 }
 
 
-void XBee::bind(uint8_t functionCode, const xbee_callback_t& callback) {
-    listeners.insert(std::make_pair(functionCode, callback));
-}
-
 void XBee::printFrame(const uint8_t *frame, uint8_t length) {
     logger(INFO) << std::showbase << std::hex
                  << "\n\t- StartDelimiter : " << (int) frame[0]
@@ -233,9 +229,13 @@ void XBee::printFrame(const uint8_t *frame, uint8_t length) {
     logger(INFO) << "\n\t- Checksum : " << (int) (frame[length - 2] << 8 | frame[length - 1]) << std::endl;
 }
 
+
 void XBee::startListening() {
     isListening = true;
+
     listenerThread = std::make_unique<std::thread>(&XBee::listen, this);
+    queueThread = std::make_unique<std::thread>(&XBee::processQueue, this);
+
     logger(INFO) << "Thread d'écoute démarré" << std::endl;
 }
 
@@ -253,149 +253,134 @@ void XBee::listen() {
 }
 
 int XBee::processBuffer(std::vector<uint8_t> &response) {
-    int status = XB_SUBTRAME_E_NONE;
+    const uint8_t *data = response.data();
+    const uint8_t length = response.size();
+    const uint8_t dataLength = length - XB_FRAME_MIN_LENGTH;
+
     logger(INFO) << "Données reçues" << std::endl;
 
-    while (true) {
-        auto it = std::find(response.begin(), response.end(), XB_V_START);
-
-        if (it == response.end() || response.size() < XB_FRAME_DEFAULT_LENGTH) {
-            break;
-        }
-
-        auto it2 = std::find(it + 1, response.end(), XB_V_START);
-
-        if (it2 - it < XB_FRAME_DEFAULT_LENGTH) {
-            continue;
-        }
-
-        uint8_t buffer[it2 - it];
-        std::copy(it, it2, buffer);
-
-        response.erase(it, it2);
-        status = processFrame(buffer);
+    if (length < XB_FRAME_MIN_LENGTH) {
+        logger(WARNING) << "Trame reçue trop petite" << std::endl;
+        return XB_E_FRAME_LENGTH;
     }
 
-    return status;
+    if (response[0] != XB_FRAME_SOH || response.back() != XB_FRAME_EOT) {
+        logger(WARNING) << "Délimitation de la trame invalide" << std::endl;
+        return XB_E_FRAME_CORRUPTED;
+    }
+
+    if (response[1] != ~response[2]) {
+        logger(WARNING) << "Valeur de la longueur corrompue" << std::endl;
+        return XB_E_FRAME_CORRUPTED;
+    }
+
+    if (response[1] != length) {
+        logger(WARNING) << "Longueur de la trame incohérente" << std::endl;
+        return XB_E_FRAME_LENGTH;
+    }
+
+    uint16_t headerChecksum = (response[7] << 8) | response[8];
+    uint16_t dataChecksum = (response[length - 2] << 8) | response[length - 1];
+
+    if (headerChecksum != computeChecksum(data, XB_FRAME_HEADER_LENGTH)) {
+        logger(WARNING) << "Checksum de l'en-tête invalide" << std::endl;
+        return XB_E_FRAME_CRC_HEADER;
+    }
+
+    if (dataChecksum != computeChecksum(data + XB_FRAME_DATA_SHIFT, dataLength)) {
+        logger(WARNING) << "Checksum des données invalide" << std::endl;
+        return XB_E_FRAME_CRC_DATA;
+    }
+
+    processFrame(response.data(), dataLength);
+    return XB_E_SUCCESS;
 }
 
-int XBee::processFrame(const uint8_t *buffer) {
-    uint8_t length = buffer[1];
-    uint8_t dataLength = length - XB_FRAME_DATA_SHIFT - 2;
-
-    if (length > XB_FRAME_MAX_SIZE) {
-        logger(ERROR) << "La trame reçue dépasse la limite de " << XB_FRAME_MAX_SIZE << " octets" << std::endl;
-        return XB_TRAME_E_DATALEN;
-    }
-
-    if (address != buffer[3]) {
-        logger(WARNING) << "La trame reçue n'est pas destinée à ce module" << std::endl;
-        return XB_TRAME_E_WRONG_ADR;
-    }
-
-    logger(INFO) << "Trame reçue :" << std::endl;
-    printFrame(buffer, length);
-
-    uint16_t checksum = buffer[length - 1] << 8 | buffer[length - 2];
-    if (checksum != computeChecksum(buffer, length - 2)) {
-        logger(ERROR) << "La trame reçue est corrompue" << std::endl;
-        return XB_TRAME_E_CRC;
-    }
-
+int XBee::processFrame(const uint8_t *buffer, const uint8_t &dataLength) {
     xbee_frame_t frame = {
-            .startDelimiter = buffer[0],
-            .length = buffer[1],
-            .emitterAddress = buffer[2],
             .receiverAddress = buffer[3],
-            .frameId = buffer[4],
+            .emitterAddress = buffer[2],
             .functionCode = buffer[5],
-            .data = new uint8_t[dataLength],
-            .checksum = checksum,
+            .frameId = buffer[4],
+            .data = std::vector<uint8_t>(dataLength)
     };
 
     for (uint8_t i = 0; i < dataLength; i++) {
         frame.data[i] = buffer[XB_FRAME_DATA_SHIFT + i];
     }
 
-    if (listeners.contains(frame.functionCode)) {
-        listeners[frame.functionCode](frame);
-    } else {
-        responses[frame.frameId] = frame;
-    }
+    queueMutex.lock();
+    queue.push_back(frame);
+    queueMutex.unlock();
 
-    delete[] frame.data;
-    return XB_SUBTRAME_E_SUCCESS;
+    logger(INFO) << "Trame ajoutée à la file d'attente" << std::endl;
+    return XB_E_SUCCESS;
 }
 
-int XBee::waitFor(xbee_frame_t &frame, uint8_t frameID, uint32_t timeout) {
-    auto start = std::chrono::steady_clock::now();
-
-    while (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() < timeout) {
-        if (!responses.contains(frameID))
+void XBee::processQueue() {
+    while (isListening) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        queueMutex.lock();
+        
+        if (queue.empty()) {
+            queueMutex.unlock();
             continue;
+        }
 
-        frame = responses[frameID];
-        responses.erase(frameID);
-        return XB_E_SUCCESS;
+
     }
-
-    logger(ERROR) << "Timeout atteint lors de l'attente d'une réponse" << std::endl;
-    return XB_SER_E_TIMOUT;
 }
 
 
 int XBee::send(uint8_t dest, uint8_t functionCode, const uint8_t *data, uint8_t dataLength) {
-    if (dataLength > XB_FRAME_MAX_SIZE - XB_FRAME_DEFAULT_LENGTH) {
-        logger(ERROR) << "Trop de données à envoyer (max " << XB_FRAME_MAX_SIZE - XB_FRAME_DEFAULT_LENGTH << " octets)" << std::endl;
-        return XB_TRAME_E_DATALEN;
+    if (dataLength > XB_FRAME_MAX_SIZE - XB_FRAME_MIN_LENGTH) {
+        logger(ERROR) << "Trop de données à envoyer (max " << XB_FRAME_MAX_SIZE - XB_FRAME_MIN_LENGTH << " octets)" << std::endl;
+        return XB_E_FRAME_DATA_LENGTH;
     }
 
-    uint8_t frameLen = XB_FRAME_DEFAULT_LENGTH + dataLength;
+    uint8_t frameLen = XB_FRAME_MIN_LENGTH + dataLength;
     uint8_t frame[frameLen];
 
-    frame[0] = XB_V_START;
+    frame[0] = XB_FRAME_SOH;
     frame[1] = frameLen;
-    frame[2] = address;
+    frame[2] = ~frameLen;
     frame[3] = dest;
-    frame[4] = ++totalFrames;
+    frame[4] = address;
     frame[5] = functionCode;
+    frame[6] = ++totalFrames;
+
+    uint16_t headerChecksum = computeChecksum(frame, XB_FRAME_HEADER_LENGTH);
+    frame[7] = (headerChecksum >> 8) & 0xFF;
+    frame[8] = headerChecksum & 0xFF;
 
     for (int i = 0; i < dataLength; i++) {
         frame[XB_FRAME_DATA_SHIFT + i] = data[i];
     }
 
-    uint16_t crc = computeChecksum(frame, frameLen - 2);
-    frame[frameLen - 2] = crc & 0xFF;
-    frame[frameLen - 1] = crc >> 8;
+    uint16_t dataChecksum = computeChecksum(data, dataLength);
+    frame[frameLen - 2] = dataChecksum & 0xFF;
+    frame[frameLen - 1] = dataChecksum >> 8;
 
     serial.writeBytes(frame, frameLen);
 
     logger(INFO) << "Trame envoyée avec succès :";
     printFrame(frame, frameLen);
 
-    return XB_TRAME_E_SUCCESS;
+    return XB_E_SUCCESS;
 }
 
 
 uint16_t XBee::computeChecksum(const uint8_t *frame, uint8_t length) {
-    int checksum = 0xFFFF, count = 0;
-    int curByte = frame[0];
-    const int POLYNOME = 0xA001;
+    uint8_t checksum = 0x0000;
 
-    do {
-        checksum ^= curByte;
+    for (uint8_t i = 0; i < length; i++) {
+        checksum ^= frame[i];
+    }
 
-        for (uint8_t i = 0; i < 8; i++)
-            if ((checksum % 2) != 0)
-                checksum = (checksum >> 1) ^ POLYNOME;
-            else
-                checksum = (checksum >> 1);
+    uint8_t checksumLSB = (checksum & 0x0F) | 0x50;
+    uint8_t checksumMSB = (checksum & 0xF0) >> 4 | 0x50;
 
-        count++;
-        curByte = frame[count];
-    } while (count < length);
-
-    return checksum;
+    return checksumMSB << 8 | checksumLSB;
 }
 
 
@@ -435,5 +420,6 @@ XBee::~XBee() {
     if (isListening) {
         isListening = false;
         listenerThread->join();
+        queueThread->join();
     }
 }

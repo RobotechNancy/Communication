@@ -228,7 +228,7 @@ int serialib::openDevice(const char *Device, const unsigned int Bauds,
     // Open device
     fd = open(Device, O_RDWR | O_NOCTTY | O_NDELAY);
     // If the device is not open, return -1
-    if (fd == -1) return XB_SER_E_OPEN;
+    if (fd == -1) return XB_E_SER_OPEN;
     // Open the device in nonblocking mode
     fcntl(fd, F_SETFL, FNDELAY);
 
@@ -275,7 +275,7 @@ int serialib::openDevice(const char *Device, const unsigned int Bauds,
             Speed = B115200;
             break;
         default :
-            return XB_SER_E_UKN_BAUDRATE;
+            return XB_E_SER_UKN_BAUDRATE;
     }
     int databits_flag = 0;
     switch (Databits) {
@@ -293,7 +293,7 @@ int serialib::openDevice(const char *Device, const unsigned int Bauds,
             break;
             //16 bits and everything else not supported
         default:
-            return XB_SER_E_UKN_DATABITS;
+            return XB_E_SER_UKN_DATABITS;
     }
     int stopbits_flag = 0;
     switch (Stopbits) {
@@ -305,7 +305,7 @@ int serialib::openDevice(const char *Device, const unsigned int Bauds,
             break;
             //1.5 stopbits and everything else not supported
         default:
-            return XB_SER_E_UKN_STOPBITS;
+            return XB_E_SER_UKN_STOPBITS;
     }
     int parity_flag = 0;
     switch (Parity) {
@@ -320,7 +320,7 @@ int serialib::openDevice(const char *Device, const unsigned int Bauds,
             break;
             //mark and space parity not supported
         default:
-            return XB_SER_E_UKN_PARITY;
+            return XB_E_SER_UKN_PARITY;
     }
 
     // Set the baud rate
@@ -337,7 +337,7 @@ int serialib::openDevice(const char *Device, const unsigned int Bauds,
     // Activate the settings
     tcsetattr(fd, TCSANOW, &options);
     // Success
-    return (XB_SER_E_SUCCESS);
+    return (XB_E_SUCCESS);
 #endif
 
 }

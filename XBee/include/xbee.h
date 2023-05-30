@@ -17,15 +17,12 @@
 #include <chrono>
 #include <thread>
 #include <atomic>
-#include <iostream>
 #include <iterator>
 #include <functional>
 #include <robotech/logs.h>
 
 #include "define_xbee.h"
 
-
-typedef void(*xbee_callback_t)(const xbee_frame_t& frame);
 
 class XBee {
 public:
@@ -35,8 +32,6 @@ public:
 
     void startListening();
     void printFrame(const uint8_t *frame, uint8_t length);
-    int waitFor(xbee_frame_t &frame, uint8_t frameID, uint32_t timeout);
-    void bind(uint8_t functionCode, const xbee_callback_t& callback);
     int send(uint8_t dest, uint8_t functionCode, const uint8_t *data, uint8_t dataLength = 1);
 private:
     serialib serial;
@@ -44,11 +39,13 @@ private:
 
     uint8_t address;
     int totalFrames = 0;
-    std::map<uint8_t, xbee_frame_t> responses;
 
     std::atomic<bool> isListening{false};
     std::unique_ptr<std::thread> listenerThread;
-    std::map<uint32_t, xbee_callback_t> listeners;
+
+    std::mutex queueMutex;
+    std::vector<xbee_frame_t> queue;
+    std::unique_ptr<std::thread> queueThread;
 
     bool enterATMode();
     bool exitATMode();
@@ -58,8 +55,9 @@ private:
     bool sendATCommand(const char *command, const char *value, bool mode = XB_AT_M_SET);
 
     void listen();
+    void processQueue();
     int processBuffer(std::vector<uint8_t> &response);
-    int processFrame(const uint8_t *buffer);
+    int processFrame(const uint8_t *buffer, const uint8_t &dataLength);
     static uint16_t computeChecksum(const uint8_t *frame, uint8_t length);
     template<typename T> void readRx(T &buffer, unsigned int timeout = 100);
 };
