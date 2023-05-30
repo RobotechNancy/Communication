@@ -212,21 +212,12 @@ bool XBee::writeATConfig() {
 }
 
 
-void XBee::printFrame(const uint8_t *frame, uint8_t length) {
-    logger(INFO) << std::showbase << std::hex
-                 << "\n\t- StartDelimiter : " << (int) frame[0]
-                 << "\n\t- Length : " << (int) frame[1]
-                 << "\n\t- EmitAddress : " << (int) frame[2]
-                 << "\n\t- ReceiverAddress : " << (int) frame[3]
-                 << "\n\t- FrameId : " << (int) frame[4]
-                 << "\n\t- FunctionCode : " << (int) frame[5]
-                 << "\n\t- Data : ";
-
-    for (int i = 0; i < length - XB_FRAME_DATA_SHIFT - 2; i++) {
-        logger(INFO) << (int) frame[XB_FRAME_DATA_SHIFT + i] << " ";
+void XBee::printBuffer(const uint8_t *frame, uint8_t length) {
+    for (int i = 0; i < length; i++) {
+        logger(INFO) << std::showbase << std::hex << (int) frame[XB_FRAME_DATA_SHIFT + i] << " ";
     }
 
-    logger(INFO) << "\n\t- Checksum : " << (int) (frame[length - 2] << 8 | frame[length - 1]) << std::endl;
+    logger(INFO) << std::endl;
 }
 
 
@@ -257,7 +248,8 @@ int XBee::processBuffer(std::vector<uint8_t> &response) {
     const uint8_t length = response.size();
     const uint8_t dataLength = length - XB_FRAME_MIN_LENGTH;
 
-    logger(INFO) << "Données reçues" << std::endl;
+    logger(INFO) << "Données reçues :";
+    printBuffer(data, length);
 
     if (length < XB_FRAME_MIN_LENGTH) {
         logger(WARNING) << "Trame reçue trop petite" << std::endl;
@@ -367,7 +359,7 @@ int XBee::send(uint8_t dest, uint8_t functionCode, const uint8_t *data, uint8_t 
     serial.writeBytes(frame, frameLen);
 
     logger(INFO) << "Trame envoyée avec succès :";
-    printFrame(frame, frameLen);
+    printBuffer(frame, frameLen);
 
     return XB_E_SUCCESS;
 }
@@ -423,6 +415,6 @@ XBee::~XBee() {
     if (isListening) {
         isListening = false;
         listenerThread->join();
-        queueThread->join();
+        //queueThread->join();
     }
 }

@@ -32,7 +32,7 @@ public:
     ~XBee();
 
     void startListening();
-    void printFrame(const uint8_t *frame, uint8_t length);
+    void printBuffer(const uint8_t *frame, uint8_t length);
     int send(uint8_t dest, uint8_t functionCode, const uint8_t *data, uint8_t dataLength = 1);
 private:
     serialib serial;
