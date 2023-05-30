@@ -261,7 +261,7 @@ int XBee::processBuffer(std::vector<uint8_t> &response) {
         return XB_E_FRAME_CORRUPTED;
     }
 
-    if (response[1] != ~response[2]) {
+    if (response[1] != (uint8_t) ~response[2]) {
         logger(WARNING) << "Valeur de la longueur corrompue" << std::endl;
         return XB_E_FRAME_CORRUPTED;
     }
@@ -272,7 +272,7 @@ int XBee::processBuffer(std::vector<uint8_t> &response) {
     }
 
     uint16_t headerChecksum = (response[7] << 8) | response[8];
-    uint16_t dataChecksum = (response[length - 2] << 8) | response[length - 1];
+    uint16_t dataChecksum = (response[length - 2] << 8) | response[length - 3];
 
     if (headerChecksum != computeChecksum(data, XB_FRAME_HEADER_LENGTH)) {
         logger(WARNING) << "Checksum de l'en-tête invalide" << std::endl;
