@@ -378,15 +378,14 @@ int XBee::send(xbee_frame_t &frame, uint8_t dest, uint8_t functionCode, const st
             return XB_E_FRAME_TIMEOUT;
         }
 
-        {
-            std::lock_guard<std::mutex> lock(responseMutex);
-
-            if (responses.contains(frameId)) {
-                frame = responses[frameId];
-                responses.erase(frameId);
-                return XB_E_SUCCESS;
-            }
+        responseMutex.lock();
+        if (responses.contains(frameId)) {
+            frame = responses[frameId];
+            responses.erase(frameId);
+            responseMutex.unlock();
+            return XB_E_SUCCESS;
         }
+        responseMutex.unlock();
     }
 }
 
