@@ -12,7 +12,7 @@
 
 int main() {
     XBee xbee(XB_ADDR_ROBOT_01);
-    int status = xbee.open("/dev/ttyS0");
+    int status = xbee.open("/dev/ttyUSB0");
 
     if (status != XB_E_SUCCESS) {
         return status;
@@ -20,8 +20,8 @@ int main() {
 
     xbee.startListening();
 
-    uint8_t data[1] = {0x05};
-    xbee.send(XB_ADDR_CAMERA_01, XB_FCT_TEST_ALIVE, data, 1);
+    //uint8_t data[1] = {0x05};
+    //xbee.send(XB_ADDR_CAMERA_01, XB_FCT_TEST_ALIVE, data, 1);
 
     std::this_thread::sleep_for(std::chrono::seconds(10));
     return XB_E_SUCCESS;

@@ -49,7 +49,7 @@
     <----------------------------------------- 255 octets max ----------------------------------------->
     | SOH | LEN | NOT_LEN | ADDR_RECV | ADDR_EMIT | FCT_CODE | ID | CRC_HEADER | DATA | CRC_DATA | EOT |
     |  1  |  1  |    1    |     1     |     1     |     1    | 1  |     2      | 244  |     2    |  1  |
-    |  0  |  1  |    2    |     3     |     4     |     5    | 6  |    7-8     |  n   |  n+1-n+2 | n+2 |
+    |  0  |  1  |    2    |     3     |     4     |     5    | 6  |    7-8     | 9-n  |  n+1-n+2 | n+2 |
 
     SOH : Début de la trame                           EOT : Fin de la trame
     LEN : Longueur de la trame                        NOT_LEN : LEN inversé pour valider LEN
@@ -67,14 +67,8 @@
 #define XB_FRAME_MAX_SIZE       255
 #define XB_FRAME_SOH            0x01
 #define XB_FRAME_EOT            0x04
-
-typedef struct {
-    uint8_t receiverAddress;
-    uint8_t emitterAddress;
-    uint8_t functionCode;
-    uint8_t frameId;
-    std::vector<uint8_t> data;
-} xbee_frame_t;
+#define XB_FRAME_MAX_ID         0xFF
+#define XB_FRAME_TIMEOUT        5000
 
 
 #define XB_E_SUCCESS               000
@@ -85,6 +79,8 @@ typedef struct {
 #define XB_E_FRAME_DATA_LENGTH     (-204)
 #define XB_E_FRAME_CRC_HEADER      (-205)
 #define XB_E_FRAME_CRC_DATA        (-206)
+#define XB_E_FRAME_UNKNOWN         (-207)
+#define XB_E_FRAME_TIMEOUT         (-208)
 
 #define XB_E_AT_ENTER              (-401)
 #define XB_E_AT_API                (-402)
@@ -101,12 +97,8 @@ typedef struct {
 #define XB_E_AT_EXIT               (-413)
 #define XB_E_AT_WRITE_CONFIG       (-414)
 
-#define XB_E_SER_NOT_FOUND         (-501)
 #define XB_E_SER_OPEN              (-502)
-#define XB_E_SER_PARAM             (-503)
 #define XB_E_SER_UKN_BAUDRATE      (-504)
-#define XB_E_SER_CONFIG            (-505)
-#define XB_E_SER_TIMOUT            (-506)
 #define XB_E_SER_UKN_DATABITS      (-507)
 #define XB_E_SER_UKN_STOPBITS      (-508)
 #define XB_E_SER_UKN_PARITY        (-509)

@@ -13,16 +13,23 @@
 #include <map>
 #include <mutex>
 #include <memory>
-#include <string>
-#include <chrono>
 #include <thread>
 #include <atomic>
-#include <iomanip>
 #include <iterator>
-#include <functional>
 #include <robotech/logs.h>
 
 #include "define_xbee.h"
+
+
+struct xbee_frame_t{
+    uint8_t receiverAddress;
+    uint8_t emitterAddress;
+    uint8_t functionCode;
+    uint8_t frameId;
+    std::vector<uint8_t> data;
+};
+
+typedef void(*xbee_callback_t)(const xbee_frame_t &frame);
 
 
 class XBee {
@@ -32,8 +39,10 @@ public:
     ~XBee();
 
     void startListening();
-    void printBuffer(const uint8_t *frame, uint8_t length);
-    int send(uint8_t dest, uint8_t functionCode, const uint8_t *data, uint8_t dataLength = 1);
+    void printBuffer(const std::vector<uint8_t> &frame);
+    void bind(uint8_t functionCode, xbee_callback_t callback);
+    int send(uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data);
+    int send(xbee_frame_t &frame, uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data);
 private:
     serialib serial;
     Logger logger;
@@ -41,12 +50,12 @@ private:
     uint8_t address;
     int totalFrames = 0;
 
+    std::mutex responseMutex;
+    std::map<uint8_t, xbee_frame_t> responses;
+
     std::atomic<bool> isListening{false};
     std::unique_ptr<std::thread> listenerThread;
-
-    std::mutex queueMutex;
-    std::vector<xbee_frame_t> queue;
-    std::unique_ptr<std::thread> queueThread;
+    std::map<uint8_t, xbee_callback_t> callbacks;
 
     bool enterATMode();
     bool exitATMode();
@@ -56,11 +65,10 @@ private:
     bool sendATCommand(const char *command, const char *value, bool mode = XB_AT_M_SET);
 
     void listen();
-    void processQueue();
-    int processBuffer(std::vector<uint8_t> &response);
-    int processFrame(const uint8_t *buffer, const uint8_t &dataLength);
-    static uint16_t computeChecksum(const uint8_t *frame, uint8_t length);
+    int processBuffer(const std::vector<uint8_t> &response);
+    int processFrame(const std::vector<uint8_t> &buffer);
     template<typename T> void readRx(T &buffer, unsigned int timeout = 100);
+    static uint16_t computeChecksum(const std::vector<uint8_t> &frame, uint8_t start, uint8_t length);
 };
 
 #endif // XBEE_H

@@ -24,10 +24,7 @@
 // Type des fonctions de callback
 typedef void (*can_callback)(const can_message_t &frame);
 
-/*!
- * @brief Classe permettant de gérer le bus CAN
- * @details Cette classe permet d'initialiser le bus CAN, de l'écouter et d'envoyer des messages
- */
+
 class Can {
 public:
     int init(can_address_t address);

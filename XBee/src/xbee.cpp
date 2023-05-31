@@ -212,21 +212,22 @@ bool XBee::writeATConfig() {
 }
 
 
-void XBee::printBuffer(const uint8_t *frame, uint8_t length) {
-    for (int i = 0; i < length; i++) {
-        logger(INFO) << std::showbase << std::hex << (int) frame[i] << " ";
+void XBee::printBuffer(const std::vector<uint8_t> &buffer) {
+    for (const uint8_t &byte: buffer) {
+        logger(INFO) << std::showbase << std::hex << (int) byte << " ";
     }
 
     logger(INFO) << std::endl;
 }
 
 
+void XBee::bind(uint8_t functionCode, xbee_callback_t callback) {
+    callbacks[functionCode] = callback;
+}
+
 void XBee::startListening() {
     isListening = true;
-
     listenerThread = std::make_unique<std::thread>(&XBee::listen, this);
-    //queueThread = std::make_unique<std::thread>(&XBee::processQueue, this);
-
     logger(INFO) << "Thread d'écoute démarré" << std::endl;
 }
 
@@ -243,13 +244,12 @@ void XBee::listen() {
     }
 }
 
-int XBee::processBuffer(std::vector<uint8_t> &response) {
-    const uint8_t *data = response.data();
+int XBee::processBuffer(const std::vector<uint8_t> &response) {
     const uint8_t length = response.size();
     const uint8_t dataLength = length - XB_FRAME_MIN_LENGTH;
 
     logger(INFO) << "Données reçues :";
-    printBuffer(data, length);
+    printBuffer(response);
 
     if (length < XB_FRAME_MIN_LENGTH) {
         logger(WARNING) << "Trame reçue trop petite" << std::endl;
@@ -274,67 +274,63 @@ int XBee::processBuffer(std::vector<uint8_t> &response) {
     uint16_t headerChecksum = (response[7] << 8) | response[8];
     uint16_t dataChecksum = (response[length - 2] << 8) | response[length - 3];
 
-    if (headerChecksum != computeChecksum(data, XB_FRAME_HEADER_LENGTH)) {
+    if (headerChecksum != computeChecksum(response, 0, XB_FRAME_HEADER_LENGTH)) {
         logger(WARNING) << "Checksum de l'en-tête invalide" << std::endl;
         return XB_E_FRAME_CRC_HEADER;
     }
 
-    if (dataChecksum != computeChecksum(data + XB_FRAME_DATA_SHIFT, dataLength)) {
+    if (dataChecksum != computeChecksum(response, XB_FRAME_DATA_SHIFT, dataLength)) {
         logger(WARNING) << "Checksum des données invalide" << std::endl;
         return XB_E_FRAME_CRC_DATA;
     }
 
-    return processFrame(response.data(), dataLength);
+    return processFrame(response);
 }
 
-int XBee::processFrame(const uint8_t *buffer, const uint8_t &dataLength) {
+int XBee::processFrame(const std::vector<uint8_t> &buffer) {
     if (buffer[3] != address) {
         return XB_E_FRAME_ADDR;
     }
 
     xbee_frame_t frame = {
-            .receiverAddress = buffer[3],
-            .emitterAddress = buffer[2],
-            .functionCode = buffer[5],
-            .frameId = buffer[4],
-            .data = std::vector<uint8_t>(dataLength)
+            .receiverAddress = buffer[0],
+            .emitterAddress = buffer[1],
+            .functionCode = buffer[2],
+            .frameId = buffer[3],
+            .data = std::vector<uint8_t>(buffer.begin() + XB_FRAME_DATA_SHIFT, buffer.end() - 3),
     };
 
-    for (uint8_t i = 0; i < dataLength; i++) {
-        frame.data[i] = buffer[XB_FRAME_DATA_SHIFT + i];
+    if (callbacks.find(frame.functionCode) != callbacks.end()) {
+        callbacks[frame.functionCode](frame);
+        return XB_E_SUCCESS;
     }
 
-    //queueMutex.lock();
-    //queue.push_back(frame);
-    //queueMutex.unlock();
+    {
+        std::lock_guard<std::mutex> lock(responseMutex);
 
-    logger(INFO) << "Trame ajoutée à la file d'attente" << std::endl;
-    return XB_E_SUCCESS;
-}
-
-void XBee::processQueue() {
-    while (isListening) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        queueMutex.lock();
-        
-        if (queue.empty()) {
-            queueMutex.unlock();
-            continue;
+        if (responses.contains(frame.frameId)) {
+            responses[frame.frameId] = frame;
+            return XB_E_SUCCESS;
         }
-
-
     }
+
+    logger(WARNING) << "Fonction inconnue : " << frame.functionCode << std::endl;
+    return XB_E_FRAME_UNKNOWN;
 }
 
 
-int XBee::send(uint8_t dest, uint8_t functionCode, const uint8_t *data, uint8_t dataLength) {
-    if (dataLength > XB_FRAME_MAX_SIZE - XB_FRAME_MIN_LENGTH) {
+int XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data) {
+    if (totalFrames >= XB_FRAME_MAX_ID) {
+        totalFrames = 0;
+    }
+
+    if (data.size() > XB_FRAME_MAX_SIZE - XB_FRAME_MIN_LENGTH) {
         logger(ERROR) << "Trop de données à envoyer (max " << XB_FRAME_MAX_SIZE - XB_FRAME_MIN_LENGTH << " octets)" << std::endl;
         return XB_E_FRAME_DATA_LENGTH;
     }
 
-    uint8_t frameLen = XB_FRAME_MIN_LENGTH + dataLength;
-    uint8_t frame[frameLen];
+    uint8_t frameLen = XB_FRAME_MIN_LENGTH + data.size();
+    std::vector<uint8_t> frame(frameLen);
 
     frame[0] = XB_FRAME_SOH;
     frame[1] = frameLen;
@@ -342,34 +338,63 @@ int XBee::send(uint8_t dest, uint8_t functionCode, const uint8_t *data, uint8_t 
     frame[3] = dest;
     frame[4] = address;
     frame[5] = functionCode;
-    frame[6] = ++totalFrames;
+    frame[6] = totalFrames;
 
-    uint16_t headerChecksum = computeChecksum(frame, XB_FRAME_HEADER_LENGTH);
+    uint16_t headerChecksum = computeChecksum(frame, 0, XB_FRAME_HEADER_LENGTH);
     frame[7] = (headerChecksum >> 8) & 0xFF;
     frame[8] = headerChecksum & 0xFF;
 
-    for (int i = 0; i < dataLength; i++) {
+    for (int i = 0; i < data.size(); i++) {
         frame[XB_FRAME_DATA_SHIFT + i] = data[i];
     }
 
-    uint16_t dataChecksum = computeChecksum(data, dataLength);
+    uint16_t dataChecksum = computeChecksum(data, 0, data.size());
     frame[frameLen - 3] = dataChecksum & 0xFF;
     frame[frameLen - 2] = dataChecksum >> 8;
     frame[frameLen - 1] = XB_FRAME_EOT;
 
-    serial.writeBytes(frame, frameLen);
+    serial.writeBytes(frame.data(), frameLen);
 
     logger(INFO) << "Trame envoyée avec succès :";
-    printBuffer(frame, frameLen);
+    printBuffer(frame);
 
-    return XB_E_SUCCESS;
+    return totalFrames++;
 }
 
 
-uint16_t XBee::computeChecksum(const uint8_t *frame, uint8_t length) {
+int XBee::send(xbee_frame_t &frame, uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data) {
+    uint8_t frameId;
+    if ((frameId = send(dest, functionCode, data)) < 0) {
+        return frameId;
+    }
+    
+    auto start = std::chrono::steady_clock::now();
+
+    while (true) {
+        auto elapsed = std::chrono::steady_clock::now() - start;
+
+        if (elapsed > std::chrono::milliseconds(XB_FRAME_TIMEOUT)) {
+            logger(WARNING) << "Timeout de la trame " << frameId << std::endl;
+            return XB_E_FRAME_TIMEOUT;
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(responseMutex);
+
+            if (responses.contains(frameId)) {
+                frame = responses[frameId];
+                responses.erase(frameId);
+                return XB_E_SUCCESS;
+            }
+        }
+    }
+}
+
+
+uint16_t XBee::computeChecksum(const std::vector<uint8_t> &frame, uint8_t start, uint8_t length) {
     uint8_t checksum = 0x0000;
 
-    for (uint8_t i = 0; i < length; i++) {
+    for (uint8_t i = start; i < length; i++) {
         checksum ^= frame[i];
     }
 
@@ -407,15 +432,16 @@ void XBee::readRx(T &buffer, unsigned int timeout) {
 
 
 XBee::~XBee() {
-    serial.flushReceiver();
-    logger(INFO) << "Buffer Rx nettoyé avec succès" << std::endl;
+    if (serial.isDeviceOpen()) {
+        serial.flushReceiver();
+        logger(INFO) << "Buffer Rx nettoyé avec succès" << std::endl;
 
-    serial.closeDevice();
-    logger(INFO) << "Connexion série fermée avec succès" << std::endl;
+        serial.closeDevice();
+        logger(INFO) << "Connexion série fermée avec succès" << std::endl;
+    }
 
     if (isListening) {
         isListening = false;
         listenerThread->join();
-        //queueThread->join();
     }
 }

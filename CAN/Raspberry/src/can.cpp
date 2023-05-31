@@ -18,20 +18,12 @@
 #include "can.h"
 
 
-/*!
- * @brief Affiche le dernier message d'erreur
- * @param logger Logger à utiliser pour l'affichage
- */
 inline void printError(Logger &logger) {
+    // errno = dernier code d'erreur
     logger << " (" << strerror(errno) << ")" << std::endl;
 }
 
 
-/*!
- * @brief Initialise le bus CAN
- * @param myAddress Adresse CAN pour le filtrage
- * @return 0 si tout s'est bien passé, -1 sinon
- */
 int Can::init(can_address_t myAddress) {
     // Création du socket en mode non-bloquant
     address = myAddress;
@@ -90,10 +82,6 @@ int Can::init(can_address_t myAddress) {
 }
 
 
-/*!
- * @brief Affiche un message CAN
- * @param frame Message à afficher
- */
 void Can::print(const can_message_t &frame) {
     logger(INFO) << "Message reçu :\n" << std::hex << std::showbase
            << "  - Adresse émetteur : " << (int) frame.senderAddress << "\n"
@@ -108,10 +96,6 @@ void Can::print(const can_message_t &frame) {
 }
 
 
-/*!
- * @brief Démarrer l'écoute du bus CAN sur un thread séparé
- * @return 0 si tout s'est bien passé, -1 sinon
- */
 int Can::startListening() {
     if (isListening) {
         logger(WARNING) << "Le socket est déjà en écoute" << std::endl;
@@ -126,10 +110,6 @@ int Can::startListening() {
 }
 
 
-/*!
- * @brief Boucle d'écoute du bus CAN
- * @details Lecture non bloquante du socket pour pouvoir arrêter l'écoute à tout moment
- */
 void Can::listen() {
     fd_set rds{};            // Set de lecture contenant les sockets à écouter
     timeval timeout = {      // Timeout nul pour faire du polling
@@ -210,13 +190,6 @@ int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
 }
 
 
-/*!
- * @brief Bloquer le thread courant jusqu'à la réception d'un message
- * @param frame La structure dans laquelle stocker le message
- * @param messageID L'ID du message à attendre
- * @param duration La durée maximale d'attente
- * @return 0 si tout s'est bien passé, -1 sinon
- */
 int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
     auto start = std::chrono::steady_clock::now();
 
@@ -248,16 +221,6 @@ int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
 }
 
 
-/*!
- * @brief Envoi d'un message sur le bus CAN
- * @param dest Adresse du destinataire
- * @param functionCode Code fonction
- * @param data Données à envoyer
- * @param length Longueur des données
- * @param messageID ID du message
- * @param isResponse Indique si le message est une réponse à un autre message
- * @return 0 si tout s'est bien passé, -1 sinon
- */
 int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length, uint8_t messageID, bool isResponse) {
     if (length > 8) {
         logger(WARNING) << "Taille du message trop grande : " << length << std::endl;
@@ -285,19 +248,11 @@ int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length,
 }
 
 
-/*!
- * @brief Lier une fonction à la réception d'un message
- * @param functionCode Le code fonction à écouter
- * @param callback La fonction à appeler
- */
 void Can::bind(uint8_t functionCode, can_callback callback) {
     callbacks[functionCode] = callback;
 }
 
 
-/*!
- * @brief Destruction de l'objet, ferme le socket et arrête le thread
- */
 Can::~Can() {
     if (!isListening) {
         return;
