@@ -33,7 +33,6 @@ public:
     int startListening();
     void print(const can_message_t &frame);
     void bind(uint8_t functionCode, can_callback callback);
-    int waitFor(can_message_t &frame, uint8_t responseId, uint32_t timeout);
     int send(uint8_t address, uint8_t functionCode, uint8_t *data, uint8_t length, uint8_t messageID, bool isResponse);
 private:
     int socket{};

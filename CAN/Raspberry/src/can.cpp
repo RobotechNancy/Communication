@@ -144,15 +144,17 @@ void Can::listen() {
         print(frame);
         auto callback = callbacks.find(frame.functionCode);
 
-        if (frame.isResponse) {
-            mutex.lock();
-            responses[frame.messageID] = frame;
-            mutex.unlock();
-        } else if (callback != callbacks.end()) {
+        if (callback != callbacks.end()) {
             callback->second(frame);
-        } else {
-            logger(WARNING) << "Code fonction non traité : " << frame.functionCode << std::endl;
+            continue;
         }
+
+        if (frame.isResponse) {
+            std::lock_guard<std::mutex> lock(mutex);
+            responses[frame.messageID] = frame;
+        }
+
+        logger(WARNING) << "Code fonction non traité : " << frame.functionCode << std::endl;
     }
 }
 
@@ -187,37 +189,6 @@ int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
     memcpy(frame.data, buffer.data, buffer.can_dlc);
 
     return 0;
-}
-
-
-int Can::waitFor(can_message_t &frame, uint8_t messageID, uint32_t duration) {
-    auto start = std::chrono::steady_clock::now();
-
-    while (true) {
-        // Pour éviter tout problème de concurrence, on verrouille la section critique
-        mutex.lock();
-        auto response = responses.find(messageID);
-
-        // Si on a reçu une réponse, on la copie dans la structure
-        // et on la supprime de la liste des réponses en attente
-        if (response != responses.end()) {
-            frame = response->second;
-            responses.erase(response);
-            mutex.unlock();
-            return 0;
-        }
-
-        // Si on a dépassé le timeout, on quitte la boucle
-        mutex.unlock();
-        uint32_t elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                std::chrono::steady_clock::now() - start
-        ).count();
-
-        if (elapsed > duration) {
-            logger(WARNING) << "Timeout lors de l'attente d'une réponse" << std::endl;
-            return -1;
-        }
-    }
 }
 
 
