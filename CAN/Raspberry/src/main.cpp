@@ -12,7 +12,7 @@ void handleAcknowledge(const can_message_t &frame) {
 int main() {
     Can can;
 
-    if (can.init(CAN_ADDR_BASE_ROULANTE) < 0)
+    if (can.init(CAN_ADDR_RASPBERRY) < 0)
         return 1;
 
     can.bind(FCT_ACCUSER_RECPETION, handleAcknowledge);

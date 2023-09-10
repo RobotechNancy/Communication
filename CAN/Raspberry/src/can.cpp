@@ -14,6 +14,8 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <bits/ioctls.h>
+#include <sys/poll.h>
+#include <vector>
 
 #include "can.h"
 
@@ -111,34 +113,29 @@ int Can::startListening() {
 
 
 void Can::listen() {
-    fd_set rds{};            // Set de lecture contenant les sockets à écouter
-    timeval timeout = {      // Timeout nul pour faire du polling
-            .tv_sec = 0,
-            .tv_usec = 0
+    std::vector<struct pollfd> fds{
+            { socket, POLLIN, 0 }
     };
 
     int status;
     can_frame buffer{};
     can_message_t frame{};
 
-    while (isListening) {
-        FD_ZERO(&rds);          // On vide le set de lecture
-        FD_SET(socket, &rds);   // On ajoute le socket au set de lecture
-        status = ::select(socket + 1, &rds, nullptr, nullptr, &timeout); // On attend qu'un socket soit prêt
+    while (!isListening.load()) {
+        status = poll(&fds[0], 1, -1);
 
-        if (status < 0) {
-            logger(ERROR) << "Erreur lors de la lecture du socket";
+        if (status < 0 && errno == EINTR) {
+            logger(ERROR) << "Thread d'écoute interrompu";
+            printError(logger);
+            continue;
+        } else if (status < 0) {
+            logger(ERROR) << "Erreur lors de l'écoute du bus CAN";
             printError(logger);
             continue;
         }
 
-        // Le socket n'est pas prêt
-        if (status == 0) {
-            continue;
-        }
-
         // Lecture du buffer et formatage du message
-        if (readBuffer(frame, buffer) < 0)
+        if (fds[0].revents&POLLIN && readBuffer(frame, buffer) < 0)
             continue;
 
         print(frame);
@@ -225,13 +222,8 @@ void Can::bind(uint8_t functionCode, can_callback callback) {
 
 
 Can::~Can() {
-    if (!isListening) {
-        return;
-    }
-
-    isListening = false;
+    isListening.store(false);
     listenerThread->join();
-
     ::close(socket);
-    logger(INFO) << "Arrêt du bus CAN" << std::endl;
+    logger(INFO) << "Arrêt de l'écoute CAN" << std::endl;
 }
