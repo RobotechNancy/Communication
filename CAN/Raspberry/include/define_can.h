@@ -10,6 +10,9 @@
 #ifndef RASPI_DEFINE_CAN_H
 #define RASPI_DEFINE_CAN_H
 
+
+// Le header est aussi utilisable en C donc
+// en fonction du langage, on inclut les headers C++ ou C
 #ifdef __cplusplus
 #include <cstdint>
 #else
@@ -18,13 +21,22 @@
 #endif
 
 
+// Interface à utiliser (vcan0 ou can0)
 #define CAN_INTERFACE "vcan0"
 
+// Masques et décalages pour extraire les informations d'un message CAN
+#define CAN_MASK_EMIT_ADDR      0b11111111000000000000000000000
+#define CAN_MASK_RECEIVER_ADDR  0b00000000111111110000000000000
+#define CAN_MASK_FUNCTION_CODE  0b00000000000000001111111100000
+#define CAN_MASK_MESSAGE_ID     0b00000000000000000000000011110
+#define CAN_MASK_IS_RESPONSE    0b00000000000000000000000000001
 
-/*!
- * @brief Adresse d'une carte sur le bus CAN
- * @details Les adresses sont codées sur 8 bits, donc il y a 256 adresses possibles.
- */
+#define CAN_OFFSET_EMIT_ADDR      21
+#define CAN_OFFSET_RECEIVER_ADDR  13
+#define CAN_OFFSET_FUNCTION_CODE  5
+#define CAN_OFFSET_MESSAGE_ID     1
+
+
 typedef enum {
     CAN_ADDR_RASPBERRY =     0x01,
     CAN_ADDR_BASE_ROULANTE = 0x02,
@@ -36,10 +48,6 @@ typedef enum {
 } can_address_t;
 
 
-/*!
- * @brief Code d'une fonction sur le bus CAN
- * @details Les codes sont codés sur 8 bits, donc il y a 256 codes possibles.
- */
 typedef enum {
     FCT_AVANCE =              0x21,
 
@@ -61,24 +69,6 @@ typedef enum {
 } can_code_t;
 
 
-// Masques et décalages pour extraire les informations d'un message CAN
-
-#define CAN_MASK_EMIT_ADDR      0b11111111000000000000000000000
-#define CAN_MASK_RECEIVER_ADDR  0b00000000111111110000000000000
-#define CAN_MASK_FUNCTION_CODE  0b00000000000000001111111100000
-#define CAN_MASK_MESSAGE_ID     0b00000000000000000000000011110
-#define CAN_MASK_IS_RESPONSE    0b00000000000000000000000000001
-
-#define CAN_OFFSET_EMIT_ADDR      21
-#define CAN_OFFSET_RECEIVER_ADDR  13
-#define CAN_OFFSET_FUNCTION_CODE  5
-#define CAN_OFFSET_MESSAGE_ID     1
-
-
-/*!
- * @brief Structure d'un message CAN
- * @details Les messages CAN sont codés sur 29 bits
- */
 typedef struct {
     uint8_t receiverAddress;
     uint8_t senderAddress;

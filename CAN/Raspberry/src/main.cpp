@@ -11,16 +11,18 @@ void handleAcknowledge(const can_message_t &frame) {
 
 int main() {
     Can can;
-
     if (can.init(CAN_ADDR_RASPBERRY) < 0)
         return 1;
 
     can.bind(FCT_ACCUSER_RECPETION, handleAcknowledge);
     can.startListening();
 
-    uint8_t data[1] = {0x01};
-    can.send(CAN_ADDR_RASPBERRY, FCT_ACCUSER_RECPETION, data, 1, 1, false);
+    Can can2;
+    if (can2.init(CAN_ADDR_ODOMETRIE) < 0)
+        return 1;
 
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    uint8_t data[1] = {0x01};
+    can2.send(CAN_ADDR_RASPBERRY, FCT_ACCUSER_RECPETION, data, 1, 1, false);
+
     return 0;
 }

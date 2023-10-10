@@ -9,13 +9,10 @@
 
 #include <fcntl.h>
 #include <cstring>
-#include <csignal>
 #include <net/if.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <bits/ioctls.h>
-#include <sys/poll.h>
-#include <vector>
 
 #include "can.h"
 
@@ -57,9 +54,8 @@ int Can::init(can_address_t myAddress) {
     }
 
     logger(INFO) << "Adresse Hardware de l'interface " << CAN_INTERFACE << " : ";
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < 6; i++)
         logger << std::hex << std::showbase << (int) ifr.ifr_hwaddr.sa_data[i] << " ";
-    }
     logger << std::dec << std::endl;
 
     // Récupération de l'index de l'interface
@@ -113,31 +109,34 @@ int Can::startListening() {
 
 
 void Can::listen() {
-    std::vector<struct pollfd> fds{
-            { socket, POLLIN, 0 }
-    };
+    // "socket" correspond à un descripteur de fichier (fd), c'est-à-dire,
+    // un entier qui indique comment accéder à une ressource et à quoi elle correspond.
+    fd_set fds{};
+    timeval timeout{};
 
     int status;
     can_frame buffer{};
     can_message_t frame{};
 
-    while (!isListening.load()) {
-        status = poll(&fds[0], 1, -1);
+    while (isListening.load()) {
+        // Réinitialisation du set de descripteurs
+        FD_ZERO(&fds);
+        FD_SET(socket, &fds);
 
-        if (status < 0 && errno == EINTR) {
-            logger(ERROR) << "Thread d'écoute interrompu";
-            printError(logger);
-            continue;
-        } else if (status < 0) {
+        // On regarde si des données sont disponibles
+        status = ::select(socket + 1, &fds, nullptr, nullptr, &timeout);
+
+        if (status < 0) {
             logger(ERROR) << "Erreur lors de l'écoute du bus CAN";
             printError(logger);
             continue;
         }
 
         // Lecture du buffer et formatage du message
-        if (fds[0].revents&POLLIN && readBuffer(frame, buffer) < 0)
+        if (status == 0 || readBuffer(frame, buffer) < 0)
             continue;
 
+        // On affiche le message et on le traite
         print(frame);
         auto callback = callbacks.find(frame.functionCode);
 
@@ -146,12 +145,15 @@ void Can::listen() {
             continue;
         }
 
-        if (frame.isResponse) {
-            std::lock_guard<std::mutex> lock(mutex);
-            responses[frame.messageID] = frame;
+        if (!frame.isResponse) {
+            logger(WARNING) << "Code fonction non traité : " << frame.functionCode << std::endl;
+            continue;
         }
 
-        logger(WARNING) << "Code fonction non traité : " << frame.functionCode << std::endl;
+        // responses est accessible depuis plusieurs threads, on utilise donc un mutex
+        // pour éviter toute lecture/écriture concurrente (au même moment)
+        std::lock_guard<std::mutex> lock(mutex);
+        responses[frame.messageID] = frame;
     }
 }
 
@@ -164,18 +166,21 @@ int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
         return -1;
     }
 
+    // dlc = data length code (taille des données)
     if (buffer.can_dlc > 8) {
         logger(WARNING) << "Taille du message trop grande : " << buffer.can_dlc << std::endl;
         return -1;
     }
 
-    // Filtrage du message
+    // On filtre pour n'avoir que la partie qui correspond à l'adresse du récepteur
+    // et on la décale pour avoir la vraie valeur
     frame.receiverAddress = (buffer.can_id & CAN_MASK_RECEIVER_ADDR) >> CAN_OFFSET_RECEIVER_ADDR;
 
     if (address != frame.receiverAddress && frame.receiverAddress != CAN_ADDR_BROADCAST) {
         return -1;
     }
 
+    // Même démarche pour les autres champs
     frame.senderAddress   = (buffer.can_id & CAN_MASK_EMIT_ADDR) >> CAN_OFFSET_EMIT_ADDR;
     frame.functionCode    = (buffer.can_id & CAN_MASK_FUNCTION_CODE) >> CAN_OFFSET_FUNCTION_CODE;
     frame.messageID       = (buffer.can_id & CAN_MASK_MESSAGE_ID) >> CAN_OFFSET_MESSAGE_ID;
@@ -222,6 +227,10 @@ void Can::bind(uint8_t functionCode, can_callback callback) {
 
 
 Can::~Can() {
+    // On arrête l'écoute du bus CAN que si elle a été démarrée
+    if (listenerThread == nullptr)
+        return;
+
     isListening.store(false);
     listenerThread->join();
     ::close(socket);

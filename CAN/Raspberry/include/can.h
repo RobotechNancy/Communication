@@ -44,7 +44,7 @@ private:
 
     std::atomic<bool> isListening{false};                 // Atomic pour éviter les problèmes de concurrence
     std::map<uint8_t, can_callback> callbacks;
-    std::unique_ptr<std::thread> listenerThread{nullptr}; // unique_ptr pour pouvoir delete le thread au destructeur
+    std::unique_ptr<std::thread> listenerThread{nullptr}; // unique_ptr pour pouvoir que la destruction soit automatique
 
     void listen();
     int readBuffer(can_message_t& frame, can_frame &buffer);
