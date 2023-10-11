@@ -79,7 +79,7 @@ typedef struct {
 
     uint8_t messageID;
     bool isResponse;
-} can_message_t;
+} can_frame_t;
 
 
 #endif //RASPI_DEFINE_CAN_H

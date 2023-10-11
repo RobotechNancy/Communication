@@ -17,13 +17,13 @@
 #include "can.h"
 
 
-inline void printError(Logger &logger) {
+inline void printError(Logger &logger, Log level = CRITICAL, const std::string_view &message = "") {
     // errno = dernier code d'erreur
-    logger << " (" << strerror(errno) << ")" << std::endl;
+    logger(level) << message << " (" << strerror(errno) << ")" << std::endl;
 }
 
 
-int Can::init(can_address_t myAddress) {
+int CAN::init(can_address_t myAddress) {
     // Création du socket en mode non-bloquant
     address = myAddress;
     socket = ::socket(PF_CAN, SOCK_RAW, CAN_RAW);
@@ -35,21 +35,19 @@ int Can::init(can_address_t myAddress) {
     strcpy(ifr.ifr_name, CAN_INTERFACE);
 
     if (::ioctl(socket, SIOCGIFFLAGS, &ifr) < 0) {
-        logger(CRITICAL) << "Impossible de récupérer les flags de l'interface " << CAN_INTERFACE;
-        printError(logger);
+        printError(logger, CRITICAL, "Impossible de récupérer les flags de l'interface");
         return -1;
     }
 
     // Vérification de l'état de l'interface
     if ((ifr.ifr_flags & IFF_UP) == 0) {
-        logger(ERROR) << "Interface " << CAN_INTERFACE << " down" << std::endl;
+        printError(logger, ERROR, "L'interface est down");
         return -1;
     }
 
     // Récupération de l'adresse Hardware de l'interface
     if (::ioctl(socket, SIOCGIFHWADDR, &ifr) < 0) {
-        logger(CRITICAL) << "Impossible de récupérer l'adresse Hardware de l'interface " << CAN_INTERFACE;
-        printError(logger);
+        printError(logger, CRITICAL, "Impossible de récupérer l'adresse Hardware de l'interface");
         return -1;
     }
 
@@ -60,8 +58,7 @@ int Can::init(can_address_t myAddress) {
 
     // Récupération de l'index de l'interface
     if (::ioctl(socket, SIOCGIFINDEX, &ifr) < 0) {
-        logger(CRITICAL) << "Impossible de récupérer l'index de l'interface " << CAN_INTERFACE;
-        printError(logger);
+        printError(logger, CRITICAL, "Impossible de récupérer l'index de l'interface");
         return -1;
     }
 
@@ -70,8 +67,7 @@ int Can::init(can_address_t myAddress) {
     addr.can_ifindex = ifr.ifr_ifindex;
 
     if (::bind(socket, (sockaddr *) &addr, sizeof(addr)) < 0) {
-        logger(CRITICAL) << "Impossible de bind le socket";
-        printError(logger);
+        printError(logger, CRITICAL, "Impossible de bind le socket");
         return -1;
     }
 
@@ -80,7 +76,7 @@ int Can::init(can_address_t myAddress) {
 }
 
 
-void Can::print(const can_message_t &frame) {
+void CAN::print(const can_frame_t &frame) {
     logger(INFO) << "Message reçu :\n" << std::hex << std::showbase
            << "  - Adresse émetteur : " << (int) frame.senderAddress << "\n"
            << "  - Adresse récepteur : " << (int) frame.receiverAddress << "\n"
@@ -94,21 +90,21 @@ void Can::print(const can_message_t &frame) {
 }
 
 
-int Can::startListening() {
+int CAN::startListening() {
     if (isListening) {
         logger(WARNING) << "Le socket est déjà en écoute" << std::endl;
         return -1;
     }
 
     isListening = true;
-    listenerThread = std::make_unique<std::thread>(&Can::listen, this);
+    listenerThread = std::make_unique<std::thread>(&CAN::listen, this);
 
     logger(INFO) << "Le bus CAN est sous écoute" << std::endl;
     return 0;
 }
 
 
-void Can::listen() {
+void CAN::listen() {
     // "socket" correspond à un descripteur de fichier (fd), c'est-à-dire,
     // un entier qui indique comment accéder à une ressource et à quoi elle correspond.
     fd_set fds{};
@@ -116,7 +112,7 @@ void Can::listen() {
 
     int status;
     can_frame buffer{};
-    can_message_t frame{};
+    can_frame_t frame{};
 
     while (isListening.load()) {
         // Réinitialisation du set de descripteurs
@@ -127,8 +123,7 @@ void Can::listen() {
         status = ::select(socket + 1, &fds, nullptr, nullptr, &timeout);
 
         if (status < 0) {
-            logger(ERROR) << "Erreur lors de l'écoute du bus CAN";
-            printError(logger);
+            printError(logger, ERROR, "Erreur lors de l'écoute du bus CAN");
             continue;
         }
 
@@ -158,11 +153,10 @@ void Can::listen() {
 }
 
 
-int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
+int CAN::readBuffer(can_frame_t &frame, can_frame &buffer) {
     // Lecture du buffer
     if (::read(socket, &buffer, sizeof(struct can_frame)) < 0) {
-        logger(ERROR) << "Impossible de lire le buffer";
-        printError(logger);
+        printError(logger, ERROR, "Impossible de lire le buffer");
         return -1;
     }
 
@@ -194,15 +188,18 @@ int Can::readBuffer(can_message_t &frame, can_frame &buffer) {
 }
 
 
-int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length, uint8_t messageID, bool isResponse) {
-    if (length > 8) {
-        logger(WARNING) << "Taille du message trop grande : " << length << std::endl;
-        return -1;
+can_result_t CAN::send(
+        uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data,
+        uint8_t messageID, bool isResponse, int timeout // timeout si on attend une réponse
+) {
+    if (data.size() > 8) {
+        logger(WARNING) << "Taille du message trop grande : " << data.size() << std::endl;
+        return {CAN_ERROR};
     }
 
     can_frame buffer{};
-    buffer.len = length;
-    memcpy(buffer.data, data, length);
+    buffer.len = data.size();
+    memcpy(buffer.data, data.data(), data.size());
 
     buffer.can_id = CAN_ADDR_RASPBERRY << CAN_OFFSET_EMIT_ADDR |
                     dest << CAN_OFFSET_RECEIVER_ADDR |
@@ -213,20 +210,38 @@ int Can::send(uint8_t dest, uint8_t functionCode, uint8_t *data, uint8_t length,
     if (::write(socket, &buffer, sizeof(struct can_frame)) < 0) {
         logger(ERROR) << "Impossible d'écrire dans le buffer";
         printError(logger);
-        return -1;
+        return {CAN_ERROR};
     }
 
     logger(INFO) << "Message envoyé : " << std::showbase << std::hex << buffer.can_id << std::endl;
-    return 0;
+    if (timeout == 0)
+        return {CAN_OK};
+
+    auto start = std::chrono::steady_clock::now();
+    std::chrono::milliseconds timeoutMs(timeout*1000);
+
+    while (std::chrono::steady_clock::now() - start < timeoutMs) {
+        std::lock_guard<std::mutex> lock(mutex);
+        auto response = responses.find(messageID);
+
+        // Si on a reçu une réponse, on la supprime de la liste et on la retourne
+        if (response != responses.end()) {
+            responses.erase(response);
+            return {CAN_OK, response->second};
+        }
+    }
+
+    // Aucune réponse reçue à temps
+    return {CAN_TIMEOUT};
 }
 
 
-void Can::bind(uint8_t functionCode, can_callback callback) {
+void CAN::bind(uint8_t functionCode, can_callback callback) {
     callbacks[functionCode] = callback;
 }
 
 
-Can::~Can() {
+CAN::~CAN() {
     // On arrête l'écoute du bus CAN que si elle a été démarrée
     if (listenerThread == nullptr)
         return;
