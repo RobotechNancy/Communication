@@ -133,22 +133,22 @@ void CAN::listen() {
 
         // On affiche le message et on le traite
         print(frame);
+
+        // Si c'est une réponse, on bloque l'accès à responses dans d'autres threads
+        if (frame.isResponse) {
+            std::lock_guard<std::mutex> lock(mutex);
+            responses[frame.messageID] = frame;
+            continue;
+        }
+
         auto callback = callbacks.find(frame.functionCode);
 
         if (callback != callbacks.end()) {
-            callback->second(frame);
+            callback->second(*this, frame);
             continue;
         }
 
-        if (!frame.isResponse) {
-            logger(WARNING) << "Code fonction non traité : " << frame.functionCode << std::endl;
-            continue;
-        }
-
-        // responses est accessible depuis plusieurs threads, on utilise donc un mutex
-        // pour éviter toute lecture/écriture concurrente (au même moment)
-        std::lock_guard<std::mutex> lock(mutex);
-        responses[frame.messageID] = frame;
+        logger(WARNING) << "Aucun callback pour le code fonction " << (int) frame.functionCode << std::endl;
     }
 }
 
@@ -201,7 +201,7 @@ can_result_t CAN::send(
     buffer.len = data.size();
     memcpy(buffer.data, data.data(), data.size());
 
-    buffer.can_id = CAN_ADDR_RASPBERRY << CAN_OFFSET_EMIT_ADDR |
+    buffer.can_id = address << CAN_OFFSET_EMIT_ADDR |
                     dest << CAN_OFFSET_RECEIVER_ADDR |
                     functionCode << CAN_OFFSET_FUNCTION_CODE |
                     messageID << CAN_OFFSET_MESSAGE_ID |
