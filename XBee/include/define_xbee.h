@@ -15,23 +15,25 @@
 #include "serialib.h"
 
 
+// Paramétrage de la liaison série
 #define XB_BAUDRATE_PRIMARY  9600
 #define XB_DATABITS_PRIMARY  SERIAL_DATABITS_8
 #define XB_PARITY_PRIMARY    SERIAL_PARITY_NONE
 #define XB_STOPBITS_PRIMARY  SERIAL_STOPBITS_1
 
 
+// Adresses et codes fonction
 #define XB_ADDR_ROBOT_01   0x01
 #define XB_ADDR_ROBOT_02   0x02
 #define XB_ADDR_CAMERA_01  0x03
 #define XB_ADDR_CAMERA_02  0x04
-
 
 #define XB_FCT_TEST_ALIVE     0x07
 #define XB_FCT_GET_ARUCO_POS  0x08
 #define XB_FCT_ARUCO_POS      0x09
 
 
+// Paramétrage des modules XBee
 #define XB_AT_V_API              "0\r"
 #define XB_AT_V_BAUDRATE         "3\r"
 #define XB_AT_V_PARITY           "0\r"
@@ -60,7 +62,6 @@
     DATA : Données (256 - 1 - 1 - 1 - 1 - 1 - 1 - 2 - 2 - 1 = 244 octets)
     CRC_DATA : CRC des données (XOR des données puis séparation LSB et MSB)
 */
-
 #define XB_FRAME_MIN_LENGTH     12
 #define XB_FRAME_HEADER_LENGTH  7
 #define XB_FRAME_DATA_SHIFT     9
@@ -68,9 +69,9 @@
 #define XB_FRAME_SOH            0x01
 #define XB_FRAME_EOT            0x04
 #define XB_FRAME_MAX_ID         0xFF
-#define XB_FRAME_TIMEOUT        5000
 
 
+// Codes d'erreur
 #define XB_E_SUCCESS               000
 
 #define XB_E_FRAME_ADDR            (-201)
@@ -104,6 +105,7 @@
 #define XB_E_SER_UKN_PARITY        (-509)
 
 
+// Commandes AT
 #define XB_AT_CMD_ENTER           "+++"
 #define XB_AT_CMD_EXIT            "ATCN"
 #define XB_AT_CMD_WRITE_CONFIG    "ATWR"
@@ -120,6 +122,7 @@
 #define XB_AT_CMD_HIGH_DEST_ADDR  "ATDH"
 
 
+// Valeurs utiles pour les commandes AT
 #define XB_AT_R_EMPTY    ""
 #define XB_AT_R_SUCCESS  "OK\r"
 #define XB_AT_V_ENDL     "\r"

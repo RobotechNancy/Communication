@@ -21,7 +21,7 @@
 #include "define_xbee.h"
 
 
-struct xbee_frame_t{
+struct xbee_frame_t {
     uint8_t receiverAddress;
     uint8_t emitterAddress;
     uint8_t functionCode;
@@ -29,32 +29,37 @@ struct xbee_frame_t{
     std::vector<uint8_t> data;
 };
 
+struct xbee_result_t {
+    int status = XB_E_SUCCESS;
+    xbee_frame_t frame;
+};
+
+// Fonction qui retourne rien et qui accepte un xbee_frame_t en paramètre
 typedef void(*xbee_callback_t)(const xbee_frame_t &frame);
 
 
 class XBee {
 public:
-    explicit XBee(uint8_t addr);
+    explicit XBee(uint8_t addr): logger("xbee"), address(addr) {};
     int open(const char* port);
     ~XBee();
 
     void startListening();
     void printBuffer(const std::vector<uint8_t> &frame);
-    void bind(uint8_t functionCode, xbee_callback_t callback);
-    int send(uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data);
-    int send(xbee_frame_t &frame, uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data);
+    void bind(uint8_t functionCode, xbee_callback_t callback) { callbacks[functionCode] = callback; };
+    xbee_result_t send(uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data, int timeout = 0);
 private:
-    serialib serial;
-    Logger logger;
+    serialib serial;                                  // Librairie de Philippe Lucidarme
+    Logger logger;                                    // Librairie custom, disponible dans le repo Communication
 
     uint8_t address;
     int totalFrames = 0;
 
-    std::mutex responseMutex;
+    std::mutex responseMutex;                         // Mutex pour éviter les accès concurrents à responses
     std::map<uint8_t, xbee_frame_t> responses;
 
-    std::atomic<bool> isListening{false};
-    std::unique_ptr<std::thread> listenerThread;
+    std::atomic<bool> isListening{false};             // Atomic pour éviter les accès concurrents à isListening
+    std::unique_ptr<std::thread> listenerThread;      // Pointeur unique pour que la mémoire soit automatiquement libérée
     std::map<uint8_t, xbee_callback_t> callbacks;
 
     bool enterATMode();

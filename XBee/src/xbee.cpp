@@ -10,34 +10,26 @@
 #include "xbee.h"
 
 
-XBee::XBee(::uint8_t addr): logger("xbee"), address(addr) {}
-
+// Ouvrir une connexion série avec le module et configurer les paramètres AT
 int XBee::open(const char* port) {
     int status = serial.openDevice(
             port, XB_BAUDRATE_PRIMARY, XB_DATABITS_PRIMARY, XB_PARITY_PRIMARY, XB_STOPBITS_PRIMARY
     );
 
-    if (status != XB_E_SUCCESS) {
-        logger(CRITICAL) << "Impossible d'ouvrir le port " << port
-                                                           << " - baudrate : " << XB_BAUDRATE_PRIMARY
-                                                           << " - parités : " << XB_PARITY_PRIMARY
-                                                           << std::endl;
-        return status;
-    }
+    logger(CRITICAL) << (status != XB_E_SUCCESS ? "Impossible d'ouvrir le port " :
+                                                  "Connexion ouverte avec succès sur le port ")
+                     << port
+                     << " - baudrate : " << XB_BAUDRATE_PRIMARY
+                     << " - parités : " << XB_PARITY_PRIMARY << std::endl;
 
-    logger(INFO) << "Connexion ouverte avec succès sur le port " << port
-                                                                 << " - baudrate : " << XB_BAUDRATE_PRIMARY
-                                                                 << " - parité : " << XB_PARITY_PRIMARY
-                                                                 << std::endl;
-
-    if ((status = checkATConfig()) < 0)
-        return status;
-
-    return XB_E_SUCCESS;
+    return status == XB_E_SUCCESS ? XB_E_SUCCESS : checkATConfig();
 }
 
 
 int XBee::checkATConfig() {
+    // Vérification de la configuration d'un module
+    // Pour chaque paramètre, si la valeur n'est pas celle attendue, on la configure
+
     if (enterATMode())
         logger(INFO) << "Entrée dans le mode AT" << std::endl;
     else {
@@ -180,7 +172,7 @@ bool XBee::sendATCommand(const char *command, const char *value, bool mode) {
 
 bool XBee::readATResponse(const char *value, uint16_t timeout) {
     std::string response;
-    readRx<std::string>(response, timeout);
+    readRx(response, timeout);
 
     serial.flushReceiver();
     logger(INFO) << "Réponse du XBee : " << response << std::endl;
@@ -213,16 +205,9 @@ bool XBee::writeATConfig() {
 
 
 void XBee::printBuffer(const std::vector<uint8_t> &buffer) {
-    for (const uint8_t &byte: buffer) {
+    for (const uint8_t &byte: buffer)
         logger(INFO) << std::showbase << std::hex << (int) byte << " ";
-    }
-
     logger(INFO) << std::endl;
-}
-
-
-void XBee::bind(uint8_t functionCode, xbee_callback_t callback) {
-    callbacks[functionCode] = callback;
 }
 
 void XBee::startListening() {
@@ -235,15 +220,17 @@ void XBee::listen() {
     std::vector<uint8_t> response;
 
     while (isListening) {
+        // On attend 10ms pour éviter de surcharger le CPU
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         if (serial.available() > 0) {
-            readRx<std::vector<uint8_t>>(response);
+            readRx(response);
             processBuffer(response);
         }
     }
 }
 
+// Fonction pour fiabiliser la réception des trames
 int XBee::processBuffer(const std::vector<uint8_t> &response) {
     const uint8_t length = response.size();
     const uint8_t dataLength = length - XB_FRAME_MIN_LENGTH;
@@ -256,11 +243,13 @@ int XBee::processBuffer(const std::vector<uint8_t> &response) {
         return XB_E_FRAME_LENGTH;
     }
 
+    // SOH = start of header et EOT = end of transmission
     if (response[0] != XB_FRAME_SOH || response.back() != XB_FRAME_EOT) {
         logger(WARNING) << "Délimitation de la trame invalide" << std::endl;
         return XB_E_FRAME_CORRUPTED;
     }
 
+    // Si tout va bien, response[1] = NOT response[2]
     if (response[1] != (uint8_t) ~response[2]) {
         logger(WARNING) << "Valeur de la longueur corrompue" << std::endl;
         return XB_E_FRAME_CORRUPTED;
@@ -271,6 +260,7 @@ int XBee::processBuffer(const std::vector<uint8_t> &response) {
         return XB_E_FRAME_LENGTH;
     }
 
+    // Vérification des CRC16
     uint16_t headerChecksum = (response[7] << 8) | response[8];
     uint16_t dataChecksum = (response[length - 2] << 8) | response[length - 3];
 
@@ -288,9 +278,9 @@ int XBee::processBuffer(const std::vector<uint8_t> &response) {
 }
 
 int XBee::processFrame(const std::vector<uint8_t> &buffer) {
-    if (buffer[3] != address) {
+    // Vérification de l'adresse de destination
+    if (buffer[3] != address)
         return XB_E_FRAME_ADDR;
-    }
 
     xbee_frame_t frame = {
             .receiverAddress = buffer[0],
@@ -300,12 +290,16 @@ int XBee::processFrame(const std::vector<uint8_t> &buffer) {
             .data = std::vector<uint8_t>(buffer.begin() + XB_FRAME_DATA_SHIFT, buffer.end() - 3),
     };
 
-    if (callbacks.find(frame.functionCode) != callbacks.end()) {
-        callbacks[frame.functionCode](frame);
+    // callback->second contient la fonction à appeler
+    auto callback = callbacks.find(frame.functionCode);
+
+    if (callback != callbacks.end()) {
+        callback->second(frame);
         return XB_E_SUCCESS;
     }
 
     {
+        // lock_gard vérouille le mutex et le dévérouille à la fin du bloc
         std::lock_guard<std::mutex> lock(responseMutex);
 
         if (responses.contains(frame.frameId)) {
@@ -319,14 +313,13 @@ int XBee::processFrame(const std::vector<uint8_t> &buffer) {
 }
 
 
-int XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data) {
-    if (totalFrames >= XB_FRAME_MAX_ID) {
+xbee_result_t XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data, int timeout) {
+    if (totalFrames >= XB_FRAME_MAX_ID)
         totalFrames = 0;
-    }
 
     if (data.size() > XB_FRAME_MAX_SIZE - XB_FRAME_MIN_LENGTH) {
         logger(ERROR) << "Trop de données à envoyer (max " << XB_FRAME_MAX_SIZE - XB_FRAME_MIN_LENGTH << " octets)" << std::endl;
-        return XB_E_FRAME_DATA_LENGTH;
+        return { XB_E_FRAME_DATA_LENGTH };
     }
 
     uint8_t frameLen = XB_FRAME_MIN_LENGTH + data.size();
@@ -338,15 +331,14 @@ int XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &d
     frame[3] = dest;
     frame[4] = address;
     frame[5] = functionCode;
-    frame[6] = totalFrames;
+    frame[6] = totalFrames++;
 
     uint16_t headerChecksum = computeChecksum(frame, 0, XB_FRAME_HEADER_LENGTH);
     frame[7] = (headerChecksum >> 8) & 0xFF;
     frame[8] = headerChecksum & 0xFF;
 
-    for (int i = 0; i < data.size(); i++) {
+    for (int i = 0; i < data.size(); i++)
         frame[XB_FRAME_DATA_SHIFT + i] = data[i];
-    }
 
     uint16_t dataChecksum = computeChecksum(data, 0, data.size());
     frame[frameLen - 3] = dataChecksum & 0xFF;
@@ -354,48 +346,41 @@ int XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &d
     frame[frameLen - 1] = XB_FRAME_EOT;
 
     serial.writeBytes(frame.data(), frameLen);
-
     logger(INFO) << "Trame envoyée avec succès :";
     printBuffer(frame);
 
-    return totalFrames++;
-}
+    if (timeout == 0)
+        return { XB_E_SUCCESS };
 
-
-int XBee::send(xbee_frame_t &frame, uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data) {
-    uint8_t frameId;
-    if ((frameId = send(dest, functionCode, data)) < 0) {
-        return frameId;
-    }
-    
     auto start = std::chrono::steady_clock::now();
+    std::chrono::milliseconds timeoutMs(timeout);
 
-    while (true) {
-        auto elapsed = std::chrono::steady_clock::now() - start;
-
-        if (elapsed > std::chrono::milliseconds(XB_FRAME_TIMEOUT)) {
-            logger(WARNING) << "Timeout de la trame " << frameId << std::endl;
-            return XB_E_FRAME_TIMEOUT;
-        }
+    // On attend la réponse pendant le timeout (de manière thread-safe)
+    while (start - std::chrono::steady_clock::now() < timeoutMs) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         std::lock_guard<std::mutex> lock(responseMutex);
+        auto response = responses.find(totalFrames);
 
-        if (responses.contains(frameId)) {
-            frame = responses[frameId];
-            responses.erase(frameId);
-            return XB_E_SUCCESS;
+        if (response != responses.end()) {
+            responses.erase(response);
+            return { XB_E_SUCCESS, response->second };
         }
     }
+
+    // Aucune réponse reçue à temps
+    return { XB_E_FRAME_TIMEOUT };
 }
 
 
 uint16_t XBee::computeChecksum(const std::vector<uint8_t> &frame, uint8_t start, uint8_t length) {
     uint8_t checksum = 0x0000;
 
-    for (uint8_t i = start; i < length; i++) {
+    for (uint8_t i = start; i < length; i++)
         checksum ^= frame[i];
-    }
 
+    // On ne peut transmettre que des octets
+    // 0x50 permet de faciliter l'échantillonnage du signal
     uint8_t checksumLSB = (checksum & 0x0F) | 0x50;
     uint8_t checksumMSB = (checksum & 0xF0) >> 4 | 0x50;
 
@@ -408,27 +393,21 @@ void XBee::readRx(T &buffer, unsigned int timeout) {
     buffer.clear();
 
     char reponse;
+    std::chrono::milliseconds timeoutMs(timeout);
     auto start = std::chrono::steady_clock::now();
 
-    while (true) {
-        auto elapsed = std::chrono::steady_clock::now() - start;
-
-        if (std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count() > timeout)
-            break;
-
-        if (serial.available() > 0) {
-            while (serial.available() > 0) {
-                serial.readChar(&reponse);
-                buffer.push_back(reponse);
-                std::this_thread::sleep_for(std::chrono::milliseconds(2));
-            }
-
-            break;
+    while (std::chrono::steady_clock::now() - start < timeoutMs) {
+        while (serial.available() > 0) {
+            serial.readChar(&reponse);
+            buffer.push_back(reponse);
+            std::this_thread::sleep_for(std::chrono::milliseconds(2));
         }
     }
 }
 
 
+// Destructeur appelé automatiquement pour fermer la connexion série
+// et arrêter le thread d'écoute
 XBee::~XBee() {
     if (serial.isDeviceOpen()) {
         serial.flushReceiver();
