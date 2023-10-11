@@ -290,14 +290,6 @@ int XBee::processFrame(const std::vector<uint8_t> &buffer) {
             .data = std::vector<uint8_t>(buffer.begin() + XB_FRAME_DATA_SHIFT, buffer.end() - 3),
     };
 
-    // callback->second contient la fonction à appeler
-    auto callback = callbacks.find(frame.functionCode);
-
-    if (callback != callbacks.end()) {
-        callback->second(frame);
-        return XB_E_SUCCESS;
-    }
-
     {
         // lock_gard vérouille le mutex et le dévérouille à la fin du bloc
         std::lock_guard<std::mutex> lock(responseMutex);
@@ -308,7 +300,15 @@ int XBee::processFrame(const std::vector<uint8_t> &buffer) {
         }
     }
 
-    logger(WARNING) << "Fonction inconnue : " << frame.functionCode << std::endl;
+    // callback->second contient la fonction à appeler
+    auto callback = callbacks.find(frame.functionCode);
+
+    if (callback != callbacks.end()) {
+        callback->second(*this, frame);
+        return XB_E_SUCCESS;
+    }
+
+    logger(WARNING) << "Fonction non traitée : " << (int) frame.functionCode << std::endl;
     return XB_E_FRAME_UNKNOWN;
 }
 
