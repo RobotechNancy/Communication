@@ -21,6 +21,9 @@
 #include "define_xbee.h"
 
 
+// On pré-déclare la classe pour l'utiliser dans xbee_callback_t
+class XBee;
+
 struct xbee_frame_t {
     uint8_t receiverAddress;
     uint8_t emitterAddress;
@@ -35,7 +38,7 @@ struct xbee_result_t {
 };
 
 // Fonction qui retourne rien et qui accepte un xbee_frame_t en paramètre
-typedef void(*xbee_callback_t)(const xbee_frame_t &frame);
+typedef void(*xbee_callback_t)(XBee &xbee, const xbee_frame_t &frame);
 
 
 class XBee {
@@ -75,5 +78,6 @@ private:
     template<typename T> void readRx(T &buffer, unsigned int timeout = 100);
     static uint16_t computeChecksum(const std::vector<uint8_t> &frame, uint8_t start, uint8_t length);
 };
+
 
 #endif // XBEE_H

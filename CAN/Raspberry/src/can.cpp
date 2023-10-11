@@ -236,7 +236,7 @@ can_result_t CAN::send(
 }
 
 
-void CAN::bind(uint8_t functionCode, can_callback callback) {
+void CAN::bind(uint8_t functionCode, can_callback_t callback) {
     callbacks[functionCode] = callback;
 }
 

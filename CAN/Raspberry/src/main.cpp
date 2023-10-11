@@ -1,11 +1,13 @@
 #include "can.h"
 
 
-void handleAcknowledge(const can_frame_t &frame) {
+void handleAcknowledge(CAN &can, const can_frame_t &frame) {
     if (frame.data[0] == 0x01)
         std::cout << "ACK" << std::endl;
     else
         std::cout << "NACK" << std::endl;
+
+    // Possible d'utiliser can.send ici
 }
 
 
