@@ -13,6 +13,8 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <bits/ioctls.h>
+#include <sys/poll.h>
+#include <csignal>
 
 #include "can.h"
 
@@ -105,30 +107,28 @@ int CAN::startListening() {
 
 
 void CAN::listen() {
-    // "socket" correspond à un descripteur de fichier (fd), c'est-à-dire,
-    // un entier qui indique comment accéder à une ressource et à quoi elle correspond.
-    fd_set fds{};
-    timeval timeout{};
+    // "socket" est un entier qui indique comment accéder à une ressource et à quoi elle correspond (file descriptor)
+    // On utilise un pollfd pour vérifier de manière non-bloquante si des données sont disponibles
+    pollfd fd{ socket, POLLIN, 0 };
 
     int status;
     can_frame buffer{};
     can_frame_t frame{};
 
     while (isListening.load()) {
-        // Réinitialisation du set de descripteurs
-        FD_ZERO(&fds);
-        FD_SET(socket, &fds);
+        // On regarde si des données sont disponibles, 0 => pas de timeout
+        status = ::poll(&fd, 1, 0);
 
-        // On regarde si des données sont disponibles
-        status = ::select(socket + 1, &fds, nullptr, nullptr, &timeout);
-
-        if (status < 0) {
+        // "status == 0" => timeout, "status < 0" => erreur
+        if (status == 0)
+            continue;
+        else if (status < 0) {
             printError(logger, ERROR, "Erreur lors de l'écoute du bus CAN");
             continue;
         }
 
-        // Lecture du buffer et formatage du message
-        if (status == 0 || readBuffer(frame, buffer) < 0)
+        // Traitement du buffer
+        if (readBuffer(frame, buffer) < 0)
             continue;
 
         // On affiche le message et on le traite
@@ -155,7 +155,7 @@ void CAN::listen() {
 
 int CAN::readBuffer(can_frame_t &frame, can_frame &buffer) {
     // Lecture du buffer
-    if (::read(socket, &buffer, sizeof(struct can_frame)) < 0) {
+    if (::read(socket, &buffer, sizeof(can_frame)) < 0) {
         printError(logger, ERROR, "Impossible de lire le buffer");
         return -1;
     }
