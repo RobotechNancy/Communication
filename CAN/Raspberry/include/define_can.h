@@ -65,7 +65,7 @@ typedef enum {
     FCT_ATTRAPER_GATEAU =     0x57,
     FCT_LACHER_GATEAU =       0x58,
 
-    FCT_ACCUSER_RECPETION =	  0xFF,
+    FCT_ACCUSER_RECEPTION =	  0xFF,
 } can_code_t;
 
 
