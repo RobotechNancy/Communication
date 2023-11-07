@@ -12,10 +12,9 @@
 
 #include <map>
 #include <mutex>
-#include <memory>
 #include <thread>
 #include <atomic>
-#include <iterator>
+#include <functional>
 #include <robotech/logs.h>
 
 #include "define_xbee.h"
@@ -38,7 +37,7 @@ struct xbee_result_t {
 };
 
 // Fonction qui retourne rien et qui accepte un xbee_frame_t en paramètre
-typedef void(*xbee_callback_t)(XBee &xbee, const xbee_frame_t &frame);
+typedef std::function<void(XBee &xbee, const xbee_frame_t &frame)> xbee_callback_t;
 
 
 class XBee {
