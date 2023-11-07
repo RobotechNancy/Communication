@@ -13,9 +13,9 @@
 #include <map>
 #include <mutex>
 #include <vector>
-#include <memory>
 #include <thread>
 #include <atomic>
+#include <functional>
 #include <linux/can.h>
 #include <robotech/logs.h>
 
@@ -26,7 +26,7 @@
 class CAN;
 
 // Type des fonctions de callback
-typedef void (*can_callback_t)(CAN &can, const can_frame_t &frame);
+typedef std::function<void(CAN &can, const can_frame_t &frame)> can_callback_t;
 
 // Différents status possibles
 enum can_status_t {
