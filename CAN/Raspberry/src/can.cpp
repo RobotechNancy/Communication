@@ -10,11 +10,10 @@
 #include <fcntl.h>
 #include <cstring>
 #include <net/if.h>
+#include <sys/poll.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <bits/ioctls.h>
-#include <sys/poll.h>
-#include <csignal>
 
 #include "can.h"
 
@@ -38,6 +37,7 @@ int CAN::init(can_address_t myAddress) {
 
     if (::ioctl(socket, SIOCGIFFLAGS, &ifr) < 0) {
         printError(logger, CRITICAL, "Impossible de récupérer les flags de l'interface");
+        logger(INFO) << CAN_INTERFACE << std::endl;
         return -1;
     }
 

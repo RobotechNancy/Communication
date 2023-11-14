@@ -1,4 +1,9 @@
 .idea/
+.cache/
+.vscode/
+
+build/
 cmake-install/
 cmake-build-debug/
+
 logs.log
