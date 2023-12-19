@@ -14,8 +14,9 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <bits/ioctls.h>
+#include <unistd.h>
 
-#include "can.h"
+#include "../include/can.h"
 
 
 inline void printError(Logger &logger, Log level = CRITICAL, const std::string_view &message = "") {
