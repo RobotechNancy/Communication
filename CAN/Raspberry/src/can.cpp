@@ -9,6 +9,7 @@
 
 #include <fcntl.h>
 #include <cstring>
+#include <linux/can.h>
 #include <net/if.h>
 #include <sys/poll.h>
 #include <sys/ioctl.h>
@@ -205,7 +206,7 @@ can_result_t CAN::send(
                     dest << CAN_OFFSET_RECEIVER_ADDR |
                     functionCode << CAN_OFFSET_FUNCTION_CODE |
                     messageID << CAN_OFFSET_MESSAGE_ID |
-                    isResponse;
+                    isResponse | CAN_EFF_FLAG;
 
     if (::write(socket, &buffer, sizeof(struct can_frame)) < 0) {
         logger(ERROR) << "Impossible d'écrire dans le buffer";
