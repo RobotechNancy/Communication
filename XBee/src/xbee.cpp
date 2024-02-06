@@ -353,10 +353,10 @@ xbee_result_t XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<u
         return { XB_E_SUCCESS };
 
     auto start = std::chrono::steady_clock::now();
-    std::chrono::milliseconds timeoutMs(timeout);
+    std::chrono::milliseconds timeoutMs(timeout*1000);
 
     // On attend la réponse pendant le timeout (de manière thread-safe)
-    while (start - std::chrono::steady_clock::now() < timeoutMs) {
+    while ((start - std::chrono::steady_clock::now()) < timeoutMs) {
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         std::lock_guard<std::mutex> lock(responseMutex);
