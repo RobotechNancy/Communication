@@ -7,7 +7,7 @@ project(XBee VERSION 0.1 DESCRIPTION "Communication XBee pour raspberry pi")
 add_library(${PROJECT_NAME} src/xbee.cpp src/serialib.cpp)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "include/xbee.h;include/define_xbee.h")
+set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "include/xbee.h;include/define_xbee.h;include/serialib.h")
 
 find_package(Threads REQUIRED)
 target_link_libraries(${PROJECT_NAME} Threads::Threads)
