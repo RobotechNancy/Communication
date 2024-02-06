@@ -13,16 +13,19 @@
 // Ouvrir une connexion série avec le module et configurer les paramètres AT
 int XBee::open(const char* port) {
     int status = serial.openDevice(
-            port, XB_BAUDRATE_PRIMARY, XB_DATABITS_PRIMARY, XB_PARITY_PRIMARY, XB_STOPBITS_PRIMARY
+        port, XB_BAUDRATE_PRIMARY, XB_DATABITS_PRIMARY, XB_PARITY_PRIMARY, XB_STOPBITS_PRIMARY
     );
 
-    logger(CRITICAL) << (status != XB_E_SUCCESS ? "Impossible d'ouvrir le port " :
-                                                  "Connexion ouverte avec succès sur le port ")
-                     << port
-                     << " - baudrate : " << XB_BAUDRATE_PRIMARY
-                     << " - parités : " << XB_PARITY_PRIMARY << std::endl;
+    if (status != XB_E_SUCCESS) {
+        logger(CRITICAL) << "Impossible d'ouvrir la connexion sur le port '" << port
+                         << "' (baudrate=" << XB_BAUDRATE_PRIMARY
+                         << " et parité=" << XB_PARITY_PRIMARY << ")" << std::endl;
 
-    return status == XB_E_SUCCESS ? XB_E_SUCCESS : checkATConfig();
+        return status;
+    }
+
+    logger(INFO) << "Connexion ouverte avec succès sur le port " << std::endl;
+    return checkATConfig();
 }
 
 
