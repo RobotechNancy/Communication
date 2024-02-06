@@ -7,9 +7,7 @@
  * @details Version modifiée de la librairie de Samuel-Charles DITTE-DESTREE (v3.0)
  */
 
-#include "define_xbee.h"
 #include "xbee.h"
-#include <cstdint>
 
 
 int main() {
