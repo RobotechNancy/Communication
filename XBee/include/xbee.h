@@ -44,6 +44,7 @@ class XBee {
 public:
     explicit XBee(uint8_t addr): logger("xbee"), address(addr) {};
     int open(const char* port);
+    int open(const std::string &port) { return open(port.data()); };
     ~XBee();
 
     void startListening();
