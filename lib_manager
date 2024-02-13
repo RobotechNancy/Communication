@@ -6,37 +6,45 @@ GREEN='\033[0;32m'
 GRAY='\033[0;37m'
 ROOT_DIR="$(pwd)"
 
+[[ $# -gt 1 ]] && libraries="${*:2}" || libraries="Logs CAN/Raspberry XBee"
+
+for lib in $libraries; do
+  [[ ! -d "$lib" ]] && echo -e "${RED}Le dossier \"$lib\" n'existe pas${NC}" && continue
+  [[ ! -f "$lib"/CMakeLists.txt ]] && echo -e "${RED}Le dossier \"$lib\" ne contient pas de librairie${NC}" && continue
+done
+
 case $1 in
-  install)
-    [[ $# -gt 1 ]] && libraries="${*:2}" || libraries="Logs CAN/Raspberry XBee"
-
+  install|force-install)
     for lib in $libraries; do
-      [[ ! -d "$lib" ]] && echo -e "${RED}Le dossier \"$lib\" n'existe pas${NC}" && continue
-      [[ ! -f "$lib"/CMakeLists.txt ]] && echo -e "${RED}Le dossier \"$lib\" ne contient pas de librairie${NC}" && continue
-
       cd "$lib" || exit
-      [[ ! -d cmake-install ]] && mkdir cmake-install
+      [[ -d build && $1 == "force-install" ]] && yes|rm -r build
+      [[ ! -d build ]] && mkdir build
 
-      cd cmake-install || exit
+      cd build || exit
       cmake ..
-      sudo make install
+      sudo make install && echo -e "${GREEN}La librairie \"$lib\" a été installée${NC}"
 
       cd "$ROOT_DIR" || exit
-      echo -e "${GREEN}La librairie \"$lib\" a été installée${NC}"
     done
   ;;
 
-  clean)
-    for d in */; do
-        [[ -d "$d"/cmake-install ]] && flag=1 && sudo rm -r "$d"/cmake-install
-    done
+  pull|force-pull)
+    for lib in $libraries; do
+      cd "$lib" || exit
+      [[ -d build && $1 == "force-pull" ]] && yes|rm -r build
+      [[ ! -d build ]] && mkdir build
 
-    [[ $flag -eq 1 ]] && echo -e "${GREEN}Tous les dossiers \"cmake-install\" ont été supprimés${NC}" \
-                      || echo -e "${RED}Aucun dossier \"cmake-install\" trouvé${NC}"
+      cd build
+      git pull
+      cmake ..
+      sudo make install && echo -e "${GREEN}La librairie \"$lib\" a été mise à jour${NC}"
+
+      cd "$ROOT_DIR" || exit
+    done
   ;;
 
   *)
-    echo -e "${RED}Utilisation :${NC} lib_manager [install|clean] ${GRAY}<...libs>${NC}"
+    echo -e "${RED}Utilisation :${NC} lib_manager [install|force-install|pull|force_pull] ${GRAY}<...libs>${NC}"
     exit 1
   ;;
 esac
