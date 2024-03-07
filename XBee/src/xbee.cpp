@@ -209,7 +209,7 @@ bool XBee::writeATConfig() {
 
 void XBee::printBuffer(const std::vector<uint8_t> &buffer) {
     for (const uint8_t &byte: buffer)
-        logger(INFO) << std::showbase << std::hex << (int) byte << ", ";
+        logger(INFO) << std::showbase << std::hex << (int) byte << " ";
     logger(INFO) << std::endl;
 }
 
@@ -264,8 +264,8 @@ int XBee::processBuffer(const std::vector<uint8_t> &response) {
     }
 
     // Vérification des CRC16
-    uint16_t headerChecksum = (response[7] << 8) | response[8];
-    uint16_t dataChecksum = (response[length - 2] << 8) | response[length - 3];
+    uint16_t headerChecksum = response[7] | (response[8] << 8);
+    uint16_t dataChecksum =  response[length - 3] | (response[length - 2] << 8);
 
     if (headerChecksum != computeChecksum(response, 0, XB_FRAME_HEADER_LENGTH)) {
         logger(WARNING) << "Checksum de l'en-tête invalide" << std::endl;
@@ -292,11 +292,6 @@ int XBee::processFrame(const std::vector<uint8_t> &buffer) {
             .frameId = buffer[6],
             .data = std::vector<uint8_t>(buffer.begin() + XB_FRAME_DATA_SHIFT, buffer.end() - 3),
     };
-
-    for (uint8_t byte: frame.data) {
-        std::cout << std::hex << std::showbase << (int) byte << " ";
-    }
-    std::cout << std::endl;
 
     // callback->second contient la fonction à appeler
     auto callback = callbacks.find(frame.functionCode);
@@ -337,8 +332,8 @@ xbee_result_t XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<u
     frame[6] = totalFrames++;
 
     uint16_t headerChecksum = computeChecksum(frame, 0, XB_FRAME_HEADER_LENGTH);
-    frame[7] = (headerChecksum >> 8) & 0xFF;
-    frame[8] = headerChecksum & 0xFF;
+    frame[7] = headerChecksum & 0xFF;
+    frame[8] = headerChecksum >> 8;
 
     for (int i = 0; i < data.size(); i++)
         frame[XB_FRAME_DATA_SHIFT + i] = data[i];
@@ -377,17 +372,12 @@ xbee_result_t XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<u
 
 
 uint16_t XBee::computeChecksum(const std::vector<uint8_t> &frame, uint8_t start, uint8_t length) {
-    uint8_t checksum = 0x0000;
+    uint16_t checksum = 0x0000;
 
     for (uint8_t i = start; i < length; i++)
         checksum ^= frame[i];
 
-    // On ne peut transmettre que des octets
-    // 0x50 permet de faciliter l'échantillonnage du signal
-    uint8_t checksumLSB = (checksum & 0x0F) | 0x50;
-    uint8_t checksumMSB = (checksum & 0xF0) >> 4 | 0x50;
-
-    return checksumMSB << 8 | checksumLSB;
+    return checksum;
 }
 
 
