@@ -10,10 +10,6 @@
 #ifndef DEFINE_XBEE_H
 #define DEFINE_XBEE_H
 
-#include <vector>
-#include <cstdint>
-#include "serialib.h"
-
 
 // Paramétrage de la liaison série
 #define XB_BAUDRATE_PRIMARY  9600

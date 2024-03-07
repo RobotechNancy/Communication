@@ -24,7 +24,7 @@ int XBee::open(const char* port) {
         return status;
     }
 
-    logger(INFO) << "Connexion ouverte avec succès sur le port " << std::endl;
+    logger(INFO) << "Connexion ouverte avec succès sur le port " << port << std::endl;
     return checkATConfig();
 }
 
@@ -209,7 +209,7 @@ bool XBee::writeATConfig() {
 
 void XBee::printBuffer(const std::vector<uint8_t> &buffer) {
     for (const uint8_t &byte: buffer)
-        logger(INFO) << std::showbase << std::hex << (int) byte << " ";
+        logger(INFO) << std::showbase << std::hex << (int) byte << ", ";
     logger(INFO) << std::endl;
 }
 
@@ -238,7 +238,7 @@ int XBee::processBuffer(const std::vector<uint8_t> &response) {
     const uint8_t length = response.size();
     const uint8_t dataLength = length - XB_FRAME_MIN_LENGTH;
 
-    logger(INFO) << "Données reçues :";
+    logger(INFO) << "Données reçues : ";
     printBuffer(response);
 
     if (length < XB_FRAME_MIN_LENGTH) {
@@ -286,22 +286,17 @@ int XBee::processFrame(const std::vector<uint8_t> &buffer) {
         return XB_E_FRAME_ADDR;
 
     xbee_frame_t frame = {
-            .receiverAddress = buffer[0],
-            .emitterAddress = buffer[1],
-            .functionCode = buffer[2],
-            .frameId = buffer[3],
+            .receiverAddress = buffer[3],
+            .emitterAddress = buffer[4],
+            .functionCode = buffer[5],
+            .frameId = buffer[6],
             .data = std::vector<uint8_t>(buffer.begin() + XB_FRAME_DATA_SHIFT, buffer.end() - 3),
     };
 
-    {
-        // lock_gard vérouille le mutex et le dévérouille à la fin du bloc
-        std::lock_guard<std::mutex> lock(responseMutex);
-
-        if (responses.contains(frame.frameId)) {
-            responses[frame.frameId] = frame;
-            return XB_E_SUCCESS;
-        }
+    for (uint8_t byte: frame.data) {
+        std::cout << std::hex << std::showbase << (int) byte << " ";
     }
+    std::cout << std::endl;
 
     // callback->second contient la fonction à appeler
     auto callback = callbacks.find(frame.functionCode);
@@ -311,8 +306,13 @@ int XBee::processFrame(const std::vector<uint8_t> &buffer) {
         return XB_E_SUCCESS;
     }
 
-    logger(WARNING) << "Fonction non traitée : " << (int) frame.functionCode << std::endl;
-    return XB_E_FRAME_UNKNOWN;
+    {
+        // lock_gard vérouille le mutex et le dévérouille à la fin du bloc
+        std::lock_guard<std::mutex> lock(responseMutex);
+        responses[frame.frameId] = frame;
+    }
+    
+    return XB_E_SUCCESS;
 }
 
 
@@ -349,7 +349,7 @@ xbee_result_t XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<u
     frame[frameLen - 1] = XB_FRAME_EOT;
 
     serial.writeBytes(frame.data(), frameLen);
-    logger(INFO) << "Trame envoyée avec succès :";
+    logger(INFO) << "Trame envoyée avec succès : ";
     printBuffer(frame);
 
     if (timeout == 0)
