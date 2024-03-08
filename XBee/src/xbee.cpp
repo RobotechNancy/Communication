@@ -264,14 +264,14 @@ int XBee::processBuffer(const std::vector<uint8_t> &response) {
         return XB_E_FRAME_LENGTH;
     }
 
-    std::cout << "CRC HEADER Reçu : " << std::hex << std::showbase << response[7] << std::endl;
-    std::cout << "CRC DATA Reçu : " << std::hex << std::showbase << response[length-2] << std::endl;
+    std::cout << "CRC HEADER Reçu : " << std::hex << std::showbase << (int) response[7] << std::endl;
+    std::cout << "CRC DATA Reçu : " << std::hex << std::showbase << (int) response[length-2] << std::endl;
 
     uint8_t headerChecksum = computeChecksum(response, 0, XB_FRAME_HEADER_LENGTH);
-    std::cout << "CRC HEADER calculé : " << headerChecksum << std::endl;
+    std::cout << "CRC HEADER calculé : " << std::hex << std::showbase << (int) headerChecksum << std::endl;
 
     uint8_t dataChecksum = computeChecksum(response, XB_FRAME_DATA_SHIFT, length-1);
-    std::cout << "CRC DATA calculé : " << headerChecksum << std::endl;
+    std::cout << "CRC DATA calculé : " << std::hex << std::showbase << (int) headerChecksum << std::endl;
 
     if (response[7] != headerChecksum) {
         logger(WARNING) << "Checksum de l'en-tête invalide" << std::endl;
@@ -296,8 +296,12 @@ int XBee::processFrame(const std::vector<uint8_t> &buffer) {
             .emitterAddress = buffer[4],
             .functionCode = buffer[5],
             .frameId = buffer[6],
-            .data = std::vector<uint8_t>(buffer.begin() + XB_FRAME_DATA_SHIFT, buffer.end() - 3),
+            .data = std::vector<uint8_t>(buffer.size() - XB_FRAME_MIN_LENGTH),
     };
+
+    for (int i = XB_FRAME_DATA_SHIFT; i < buffer.size() - 1; i++) {
+        frame.data[i] = buffer[i];
+    }
 
     // callback->second contient la fonction à appeler
     auto callback = callbacks.find(frame.functionCode);

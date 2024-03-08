@@ -12,7 +12,7 @@
 
 int main() {
     XBee xbee(XB_ADDR_ROBOT_01);
-    int status = xbee.open("/dev/ttyUSB0");
+    int status = xbee.open("/dev/ttyS0");
 
     if (status != XB_E_SUCCESS)
         return status;
