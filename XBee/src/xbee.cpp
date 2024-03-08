@@ -320,6 +320,7 @@ xbee_result_t XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<u
         return { XB_E_FRAME_DATA_LENGTH };
     }
 
+    int id = totalFrames++;
     uint8_t frameLen = XB_FRAME_MIN_LENGTH + data.size();
     std::vector<uint8_t> frame(frameLen);
 
@@ -329,7 +330,7 @@ xbee_result_t XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<u
     frame[3] = dest;
     frame[4] = address;
     frame[5] = functionCode;
-    frame[6] = totalFrames++;
+    frame[6] = id;
 
     uint16_t headerChecksum = computeChecksum(frame, 0, XB_FRAME_HEADER_LENGTH);
     frame[7] = headerChecksum & 0xFF;
@@ -358,12 +359,14 @@ xbee_result_t XBee::send(uint8_t dest, uint8_t functionCode, const std::vector<u
         std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         std::lock_guard<std::mutex> lock(responseMutex);
-        auto response = responses.find(totalFrames);
+        auto it = responses.find(id);
 
-        if (response != responses.end()) {
-            responses.erase(response);
-            return { XB_E_SUCCESS, response->second };
-        }
+        if (it == responses.end())
+            continue;
+
+        auto frame = std::move(it->second);
+        responses.erase(id);
+        return { XB_E_SUCCESS, frame };
     }
 
     // Aucune réponse reçue à temps
