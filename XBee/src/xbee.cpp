@@ -296,11 +296,10 @@ int XBee::processFrame(const std::vector<uint8_t> &buffer) {
             .emitterAddress = buffer[4],
             .functionCode = buffer[5],
             .frameId = buffer[6],
-            .data = std::vector<uint8_t>(buffer.size() - XB_FRAME_MIN_LENGTH),
     };
 
-    for (int i = XB_FRAME_DATA_SHIFT; i < buffer.size() - 1; i++) {
-        frame.data[i] = buffer[i];
+    for (int i = XB_FRAME_DATA_SHIFT; i < buffer.size() - 2; i++) {
+        frame.data.push_back(buffer[i]);
     }
 
     // callback->second contient la fonction à appeler
