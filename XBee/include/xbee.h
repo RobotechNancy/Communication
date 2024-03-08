@@ -74,11 +74,10 @@ private:
     bool sendATCommand(const char *command, const char *value, bool mode = XB_AT_M_SET);
 
     void listen();
-public:
     int processBuffer(const std::vector<uint8_t> &response);
     int processFrame(const std::vector<uint8_t> &buffer);
     template<typename T> void readRx(T &buffer, unsigned int timeout = 100);
-    static uint16_t computeChecksum(const std::vector<uint8_t> &frame, uint8_t start, uint8_t length);
+    static uint8_t computeChecksum(const std::vector<uint8_t> &frame, uint8_t start, uint8_t length);
 };
 
 

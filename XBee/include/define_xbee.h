@@ -46,8 +46,8 @@
 /*
     <----------------------------------------- 255 octets max ----------------------------------------->
     | SOH | LEN | NOT_LEN | ADDR_RECV | ADDR_EMIT | FCT_CODE | ID | CRC_HEADER | DATA | CRC_DATA | EOT |
-    |  1  |  1  |    1    |     1     |     1     |     1    | 1  |     2      | 244  |     2    |  1  |
-    |  0  |  1  |    2    |     3     |     4     |     5    | 6  |    7-8     | 9-n  |  n+1-n+2 | n+2 |
+    |  1  |  1  |    1    |     1     |     1     |     1    | 1  |     1      | 244  |     1    |  1  |
+    |  0  |  1  |    2    |     3     |     4     |     5    | 6  |     7      | 8-n  |    n+1   | n+2 |
 
     SOH : Début de la trame                           EOT : Fin de la trame
     LEN : Longueur de la trame                        NOT_LEN : LEN inversé pour valider LEN
@@ -58,9 +58,9 @@
     DATA : Données (256 - 1 - 1 - 1 - 1 - 1 - 1 - 2 - 2 - 1 = 244 octets)
     CRC_DATA : CRC des données (XOR des données puis séparation LSB et MSB)
 */
-#define XB_FRAME_MIN_LENGTH     12
+#define XB_FRAME_MIN_LENGTH     10
 #define XB_FRAME_HEADER_LENGTH  7
-#define XB_FRAME_DATA_SHIFT     9
+#define XB_FRAME_DATA_SHIFT     8
 #define XB_FRAME_MAX_SIZE       255
 #define XB_FRAME_SOH            0x01
 #define XB_FRAME_EOT            0x04
