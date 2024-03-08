@@ -270,8 +270,8 @@ int XBee::processBuffer(const std::vector<uint8_t> &response) {
     uint8_t headerChecksum = computeChecksum(response, 0, XB_FRAME_HEADER_LENGTH);
     std::cout << "CRC HEADER calculé : " << std::hex << std::showbase << (int) headerChecksum << std::endl;
 
-    uint8_t dataChecksum = computeChecksum(response, XB_FRAME_DATA_SHIFT, length-1);
-    std::cout << "CRC DATA calculé : " << std::hex << std::showbase << (int) headerChecksum << std::endl;
+    uint8_t dataChecksum = computeChecksum(response, XB_FRAME_DATA_SHIFT, length-2);
+    std::cout << "CRC DATA calculé : " << std::hex << std::showbase << (int) dataChecksum << std::endl;
 
     if (response[7] != headerChecksum) {
         logger(WARNING) << "Checksum de l'en-tête invalide" << std::endl;
