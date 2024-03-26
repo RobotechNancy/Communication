@@ -1,10 +1,10 @@
 /*!
  * @file can.cpp
- * @version 1.2
- * @date 2022-2023
- * @author Julien PISTRE
+ * @version 1.3
+ * @date 2023-2024
+ * @author Romain ADAM
  * @brief Header de la classe Can
- * @details Version modifiée de la librairie de Théo RUSINOWITCH (v1)
+ * @details Version modifiée de la librairie de Julien PISTRE (v1.2)
  */
 
 #ifndef RASPI_CAN_H
@@ -26,7 +26,7 @@
 class CAN;
 
 // Type des fonctions de callback
-typedef std::function<void(CAN &can, const can_frame_t &frame)> can_callback_t;
+typedef std::function<void(CAN &can, const CanBus_FrameFormat &frame)> can_callback_t;
 
 // Différents status possibles
 enum can_status_t {
@@ -36,36 +36,36 @@ enum can_status_t {
 // Structure pour stocker les réponses
 struct can_result_t {
     can_status_t status;
-    can_frame_t frame;
+    CanBus_FrameFormat frame;
 };
 
 
 class CAN {
 public:
-    int init(can_address_t address);
+    int init(CanBus_Address address);
     ~CAN();
 
     int startListening();
-    void print(const can_frame_t &frame);
-    void bind(uint8_t functionCode, can_callback_t callback);
+    void print(const CanBus_FrameFormat &frame);
+    void bind(uint16_t FunctionCode, can_callback_t callback);
     can_result_t send(
-            uint8_t address, uint8_t functionCode, const std::vector<uint8_t> &data,
-            uint8_t messageID, bool isResponse, int timeout = 0
+            CanBus_Priority priority,CanBus_Address dest, CanBus_Fnct_Mode FunctionMode, CanBus_Fnct_Code FunctionCode, const std::vector<uint8_t> &data,
+            uint8_t MessageID, bool IsResp, int timeout = 0
     );
 private:
     int socket{};
-    can_address_t address{};
+    CanBus_Address address{};
     Logger logger{"CAN", "can.log"};
 
     std::mutex mutex;                                     // Mutex pour éviter les problèmes de concurrence
-    std::map<uint8_t, can_frame_t> responses;
+    std::map<uint8_t, CanBus_FrameFormat> responses;
 
     std::atomic<bool> isListening{false};                 // Atomic pour éviter les problèmes de concurrence
     std::map<uint8_t, can_callback_t> callbacks;
     std::unique_ptr<std::thread> listenerThread{nullptr}; // unique_ptr pour pouvoir que la destruction soit automatique
 
     void listen();
-    int readBuffer(can_frame_t& frame, can_frame &buffer);
+    int readBuffer(CanBus_FrameFormat& frame, can_frame &buffer);
 };
 
 

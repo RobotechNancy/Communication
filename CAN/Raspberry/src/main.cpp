@@ -1,32 +1,26 @@
 #include "can.h"
 
 
-void handleAcknowledge(CAN &can, const can_frame_t &frame) {
-    if (frame.data[0] == 0x01)
+void handleAcknowledge(CAN &can, const CanBus_FrameFormat &frame) {
+    if (frame.Data[0] == 0x01)
         std::cout << "ACK" << std::endl;
     else
         std::cout << "NACK" << std::endl;
 
-    can.send(frame.senderAddress, FCT_ACCUSER_RECEPTION, {0x01}, frame.messageID, true);
+    can.send((CanBus_Priority) frame.Priority,(CanBus_Address) frame.SenderAddress,(CanBus_Fnct_Mode) 0x00,(CanBus_Fnct_Code) frame.FunctionCode, {0x01}, frame.MessageID, true);
 }
 
 
 int main() {
     CAN can;
-    if (can.init(CAN_ADDR_RASPBERRY) < 0)
+    if (can.init(CANBUS_RASPBERRY) < 0)
         return 1;
 
     can.bind(FCT_ACCUSER_RECEPTION, handleAcknowledge);
     can.startListening();
 
-    CAN can2;
-    if (can2.init(CAN_ADDR_ODOMETRIE) < 0)
-        return 1;
-
-    can2.startListening();
-
     // Exemple d'envoi d'un message, ici on aura toujours CAN_TIMEOUT (aucun send dans handleAcknowledge)
-    can_result_t res = can2.send(CAN_ADDR_RASPBERRY, FCT_ACCUSER_RECEPTION, {0x01}, 1, false, 2);
+    can_result_t res = can.send(CANBUS_PRIO_STD, CANBUS_BASE_ROULANTE, MODE_DEBUG, FCT_DPL_AVANCE, {0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF}, 1, 0, 2);
 
     switch (res.status) {
         case CAN_OK: std::cout << "CAN_OK" << std::endl; break;
