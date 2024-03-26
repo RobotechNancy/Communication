@@ -243,7 +243,7 @@ int XBee::processBuffer(const std::vector<uint8_t> &response) {
     printBuffer(response);
 
     if (length < XB_FRAME_MIN_LENGTH) {
-        logger(WARNING) << "Trame reçue trop petite" << std::endl;
+        logger(WARNING) << "Trame reçue trop petite - " << length << std::endl;
         return XB_E_FRAME_LENGTH;
     }
 
@@ -298,9 +298,12 @@ int XBee::processFrame(const std::vector<uint8_t> &buffer) {
             .frameId = buffer[6],
     };
 
+    std::cout << "Data: ";
     for (int i = XB_FRAME_DATA_SHIFT; i < buffer.size() - 2; i++) {
+        std::cout << std::hex << std::showbase << (int) buffer[i] << " ";
         frame.data.push_back(buffer[i]);
     }
+    std::cout << std::endl;
 
     // callback->second contient la fonction à appeler
     auto callback = callbacks.find(frame.functionCode);
