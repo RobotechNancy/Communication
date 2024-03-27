@@ -1,10 +1,10 @@
 /*!
  * @file define_can.h
- * @version 1.2
- * @date 2022-2023
- * @author Julien PISTRE
+ * @version 1.3
+ * @date 2023-2024
+ * @author Romain ADAM
  * @brief Header avec les constantes du bus CAN
- * @details Version modifiée de la librairie de Théo RUSINOWITCH (v1)
+ * @details Version modifiée de la librairie de Julien PISTRE (v1.2)
  */
 
 #ifndef RASPI_DEFINE_CAN_H
@@ -20,66 +20,83 @@
 #include <stdbool.h>
 #endif
 
-
 // Interface à utiliser (vcan0 ou can0)
-#define CAN_INTERFACE "vcan0"
+#define CAN_INTERFACE "can0"
 
 // Masques et décalages pour extraire les informations d'un message CAN
-#define CAN_MASK_EMIT_ADDR      0b11111111000000000000000000000
-#define CAN_MASK_RECEIVER_ADDR  0b00000000111111110000000000000
-#define CAN_MASK_FUNCTION_CODE  0b00000000000000001111111100000
+#define CAN_MASK_PRIORITY       0b11000000000000000000000000000
+#define CAN_MASK_EMIT_ADDR      0b00111100000000000000000000000
+#define CAN_MASK_RECEIVER_ADDR  0b00000011110000000000000000000
+#define CAN_MASK_FUNCTION_MODE  0b00000000001111000000000000000
+#define CAN_MASK_FUNCTION_CODE  0b00000000000000111111111100000
 #define CAN_MASK_MESSAGE_ID     0b00000000000000000000000011110
 #define CAN_MASK_IS_RESPONSE    0b00000000000000000000000000001
 
-#define CAN_OFFSET_EMIT_ADDR      21
-#define CAN_OFFSET_RECEIVER_ADDR  13
+#define CAN_OFFSET_PRIORITY       27
+#define CAN_OFFSET_EMIT_ADDR      23
+#define CAN_OFFSET_RECEIVER_ADDR  19
+#define CAN_OFFSET_FUNCTION_MODE  15
 #define CAN_OFFSET_FUNCTION_CODE  5
 #define CAN_OFFSET_MESSAGE_ID     1
 
-
 typedef enum {
-    CAN_ADDR_RASPBERRY =     0x01,
-    CAN_ADDR_BASE_ROULANTE = 0x02,
-    CAN_ADDR_ODOMETRIE =     0x03,
-    CAN_ADDR_TOF =           0x04,
-    CAN_ADDR_ACTIONNEURS =   0x05,
+	/* Adresses Codées sur 2 bits : 0x0 à 0x3 */
+	CANBUS_PRIO_HIGH  = 0x0,
+	CANBUS_PRIO_STD   = 0x1,
+	CANBUS_PRIO_LOW   = 0x2,
+	CANBUS_PRIO_INFO  = 0x3
 
-    CAN_ADDR_BROADCAST =     0xFF
-} can_address_t;
+} CanBus_Priority;
 
 
 typedef enum {
-    FCT_AVANCE =              0x21,
+	/* Adresses Codées sur 4 bits : 0x00 à 0x0F */
 
-    FCT_GET_VARIATION_XY =    0x32,
-    FCT_GET_OPTIQUE =         0x33,
+    CANBUS_RASPBERRY     = 0x01,
+    CANBUS_BASE_ROULANTE = 0x02,
+    CANBUS_ODOMETRIE     = 0x03,
+    CANBUS_TOF           = 0x04,
+    CANBUS_ACTIONNEURS   = 0x05,
 
-    FCT_TOF_WARNING =         0x41,
+	CANBUS_BROADCAST     = 0x0F
+} CanBus_Address;
 
-    FCT_ASPIRER_BALLE =       0x51,
-    FCT_PLACER_BALLE =        0x52,
-    FCT_OUVRIR_PANIER =       0x53,
-    FCT_FERMER_PANIER =       0x54,
-    FCT_BAISSER_CREMAILLERE = 0x55,
-    FCT_MONTER_CREMAILLERE =  0x56,
-    FCT_ATTRAPER_GATEAU =     0x57,
-    FCT_LACHER_GATEAU =       0x58,
+typedef enum {
+	/* Modes de fonctionnement du Robot codés sur 4 bits : 0x00 à 0x0F */
 
-    FCT_ACCUSER_RECEPTION =	  0xFF,
-} can_code_t;
+	MODE_DEBUG       = 0x00,
+	MODE_COMPETITION = 0x01
+} CanBus_Fnct_Mode;
+
+
+typedef enum {
+	/* Codes fonctions codés sur 12 bits : 0x0000 à 0x0FFF */
+
+    FCT_ACCUSER_RECEPTION = 0x0000,
+
+	FCT_DPL_TRIANGLE      = 0x0021,
+	FCT_DPL_AVANCE        = 0x0029,
+
+	FCT_ERROR             = 0x0FFE,
+	FCT_COMPLETE          = 0x0FFF,
+
+} CanBus_Fnct_Code;
 
 
 typedef struct {
-    uint8_t receiverAddress;
-    uint8_t senderAddress;
+	uint8_t Priority;
 
-    uint8_t data[8];
-    uint8_t length;
-    uint8_t functionCode;
+    uint8_t ReceiverAddress;
+    uint8_t SenderAddress;
 
-    uint8_t messageID;
-    bool isResponse;
-} can_frame_t;
+    uint8_t FunctionMode;
 
+    uint8_t Data[8];
+    uint8_t Length;
+    uint16_t FunctionCode;
 
-#endif //RASPI_DEFINE_CAN_H
+    uint8_t MessageID;
+    bool IsResp;
+} CanBus_FrameFormat;
+
+#endif /* INC_CANBUS_DEFINE_H_ */

@@ -1,10 +1,10 @@
 /*!
  * @file can.cpp
- * @version 1.2
- * @date 2022-2023
- * @author Julien PISTRE
+ * @version 1.3
+ * @date 2023-2024
+ * @author Romain ADAM
  * @brief Fichier source de la classe Can
- * @details Version modifiée de la librairie de Théo RUSINOWITCH (v1)
+ * @details Version modifiée de la librairie de Julien PISTRE (v1.2)
  */
 
 #include <fcntl.h>
@@ -26,7 +26,7 @@ inline void printError(Logger &logger, Log level = CRITICAL, const std::string_v
 }
 
 
-int CAN::init(can_address_t myAddress) {
+int CAN::init(CanBus_Address myAddress) {
     // Création du socket en mode non-bloquant
     address = myAddress;
     socket = ::socket(PF_CAN, SOCK_RAW, CAN_RAW);
@@ -80,16 +80,18 @@ int CAN::init(can_address_t myAddress) {
 }
 
 
-void CAN::print(const can_frame_t &frame) {
+void CAN::print(const CanBus_FrameFormat &frame) {
     logger(INFO) << "Message reçu :\n" << std::hex << std::showbase
-           << "  - Adresse émetteur : " << (int) frame.senderAddress << "\n"
-           << "  - Adresse récepteur : " << (int) frame.receiverAddress << "\n"
-           << "  - Code fonction : " << (int) frame.functionCode << "\n"
-           << "  - ID message : " << (int) frame.messageID << "\n"
+    	   << "  - Priorité : " << (int) frame.Priority << "\n"
+           << "  - Adresse émetteur : " << (int) frame.SenderAddress << "\n"
+           << "  - Adresse récepteur : " << (int) frame.ReceiverAddress << "\n"
+           << "  - Mode Fonction : " << (int) frame.FunctionMode << "\n"
+           << "  - Code fonction : " << (int) frame.FunctionCode << "\n"
+           << "  - ID message : " << (int) frame.MessageID << "\n"
            << "  - Données : ";
 
-    for (int i = 0; i < frame.length; i++)
-        logger << std::hex << (int) frame.data[i] << " ";
+    for (int i = 0; i < frame.Length; i++)
+        logger << std::hex << (int) frame.Data[i] << " ";
     logger << std::dec << std::endl;
 }
 
@@ -115,7 +117,7 @@ void CAN::listen() {
 
     int status;
     can_frame buffer{};
-    can_frame_t frame{};
+    CanBus_FrameFormat frame{};
 
     while (isListening.load()) {
         // On regarde si des données sont disponibles, 0 => pas de timeout
@@ -128,7 +130,10 @@ void CAN::listen() {
             printError(logger, ERROR, "Erreur lors de l'écoute du bus CAN");
             continue;
         }
-
+	
+	//Affichage de la trame avant traitement
+	logger(INFO) << "ID et Data de la trame : " << (buffer.can_id ^ CAN_EFF_FLAG) << buffer.data << std::endl;
+	
         // Traitement du buffer
         if (readBuffer(frame, buffer) < 0)
             continue;
@@ -137,32 +142,32 @@ void CAN::listen() {
         print(frame);
 
         // Si c'est une réponse, on bloque l'accès à responses dans d'autres threads
-        if (frame.isResponse) {
+        if (frame.IsResp) {
             std::lock_guard<std::mutex> lock(mutex);
-            responses[frame.messageID] = frame;
+            responses[frame.MessageID] = frame;
             continue;
         }
 
-        auto callback = callbacks.find(frame.functionCode);
+        auto callback = callbacks.find(frame.FunctionCode);
 
         if (callback != callbacks.end()) {
             callback->second(*this, frame);
             continue;
         }
 
-        logger(WARNING) << "Aucun callback pour le code fonction " << (int) frame.functionCode << std::endl;
+        logger(WARNING) << "Aucun callback pour le code fonction " << (int) frame.FunctionCode << std::endl;
     }
 }
 
 
-int CAN::readBuffer(can_frame_t &frame, can_frame &buffer) {
+int CAN::readBuffer(CanBus_FrameFormat &frame, can_frame &buffer) {
     // Lecture du buffer
     if (::read(socket, &buffer, sizeof(can_frame)) < 0) {
         printError(logger, ERROR, "Impossible de lire le buffer");
         return -1;
     }
 
-    // dlc = data length code (taille des données)
+    // dlc = Data Length code (taille des données)
     if (buffer.can_dlc > 8) {
         logger(WARNING) << "Taille du message trop grande : " << buffer.can_dlc << std::endl;
         return -1;
@@ -170,44 +175,48 @@ int CAN::readBuffer(can_frame_t &frame, can_frame &buffer) {
 
     // On filtre pour n'avoir que la partie qui correspond à l'adresse du récepteur
     // et on la décale pour avoir la vraie valeur
-    frame.receiverAddress = (buffer.can_id & CAN_MASK_RECEIVER_ADDR) >> CAN_OFFSET_RECEIVER_ADDR;
+    frame.ReceiverAddress = (buffer.can_id & CAN_MASK_RECEIVER_ADDR) >> CAN_OFFSET_RECEIVER_ADDR;
 
-    if (address != frame.receiverAddress && frame.receiverAddress != CAN_ADDR_BROADCAST) {
+    if (address != frame.ReceiverAddress && frame.ReceiverAddress != CANBUS_BROADCAST) {
         return -1;
     }
 
     // Même démarche pour les autres champs
-    frame.senderAddress   = (buffer.can_id & CAN_MASK_EMIT_ADDR) >> CAN_OFFSET_EMIT_ADDR;
-    frame.functionCode    = (buffer.can_id & CAN_MASK_FUNCTION_CODE) >> CAN_OFFSET_FUNCTION_CODE;
-    frame.messageID       = (buffer.can_id & CAN_MASK_MESSAGE_ID) >> CAN_OFFSET_MESSAGE_ID;
-    frame.isResponse      = buffer.can_id & CAN_MASK_IS_RESPONSE;
+    frame.Priority        = (buffer.can_id & CAN_MASK_PRIORITY) >> CAN_OFFSET_PRIORITY;
+    frame.SenderAddress   = (buffer.can_id & CAN_MASK_EMIT_ADDR) >> CAN_OFFSET_EMIT_ADDR;
+    frame.FunctionMode    = (buffer.can_id & CAN_MASK_FUNCTION_MODE) >> CAN_OFFSET_FUNCTION_MODE;
+    frame.FunctionCode    = (buffer.can_id & CAN_MASK_FUNCTION_CODE) >> CAN_OFFSET_FUNCTION_CODE;
+    frame.MessageID       = (buffer.can_id & CAN_MASK_MESSAGE_ID) >> CAN_OFFSET_MESSAGE_ID;
+    frame.IsResp      = buffer.can_id & CAN_MASK_IS_RESPONSE;
 
     // Copie des données
-    frame.length = buffer.can_dlc;
-    memcpy(frame.data, buffer.data, buffer.can_dlc);
+    frame.Length = buffer.can_dlc;
+    memcpy(frame.Data, buffer.data, buffer.can_dlc);
 
     return 0;
 }
 
 
 can_result_t CAN::send(
-        uint8_t dest, uint8_t functionCode, const std::vector<uint8_t> &data,
-        uint8_t messageID, bool isResponse, int timeout // timeout si on attend une réponse
+        CanBus_Priority Priority, CanBus_Address dest, CanBus_Fnct_Mode FunctionMode, CanBus_Fnct_Code FunctionCode, const std::vector<uint8_t> &Data,
+        uint8_t MessageID, bool IsResp, int timeout // timeout si on attend une réponse
 ) {
-    if (data.size() > 8) {
-        logger(WARNING) << "Taille du message trop grande : " << data.size() << std::endl;
+    if (Data.size() > 8) {
+        logger(WARNING) << "Taille du message trop grande : " << Data.size() << std::endl;
         return {CAN_ERROR};
     }
 
     can_frame buffer{};
-    buffer.len = data.size();
-    memcpy(buffer.data, data.data(), data.size());
+    buffer.len = Data.size();
+    memcpy(buffer.data, Data.data(), Data.size());
 
-    buffer.can_id = address << CAN_OFFSET_EMIT_ADDR |
-                    dest << CAN_OFFSET_RECEIVER_ADDR |
-                    functionCode << CAN_OFFSET_FUNCTION_CODE |
-                    messageID << CAN_OFFSET_MESSAGE_ID |
-                    isResponse | CAN_EFF_FLAG;
+    buffer.can_id = Priority     << CAN_OFFSET_PRIORITY      |
+                    address      << CAN_OFFSET_EMIT_ADDR     |
+                    dest         << CAN_OFFSET_RECEIVER_ADDR |
+                    FunctionMode << CAN_OFFSET_FUNCTION_MODE |
+                    FunctionCode << CAN_OFFSET_FUNCTION_CODE |
+                    MessageID    << CAN_OFFSET_MESSAGE_ID    |
+                    IsResp   |  CAN_EFF_FLAG;
 
     if (::write(socket, &buffer, sizeof(struct can_frame)) < 0) {
         logger(ERROR) << "Impossible d'écrire dans le buffer";
@@ -224,7 +233,7 @@ can_result_t CAN::send(
 
     while (std::chrono::steady_clock::now() - start < timeoutMs) {
         std::lock_guard<std::mutex> lock(mutex);
-        auto response = responses.find(messageID);
+        auto response = responses.find(MessageID);
 
         // Si on a reçu une réponse, on la supprime de la liste et on la retourne
         if (response != responses.end()) {
@@ -238,8 +247,8 @@ can_result_t CAN::send(
 }
 
 
-void CAN::bind(uint8_t functionCode, can_callback_t callback) {
-    callbacks[functionCode] = callback;
+void CAN::bind(uint16_t FunctionCode, can_callback_t callback) {
+    callbacks[FunctionCode] = callback;
 }
 
 
