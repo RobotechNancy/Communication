@@ -12,7 +12,7 @@
 
 int main() {
     XBee xbee(XB_ADDR_ROBOT_01);
-    int status = xbee.open("/dev/ttyUSB0");
+    int status = xbee.open("/dev/ttyS0");
 
     if (status != XB_E_SUCCESS)
         return status;
@@ -49,7 +49,7 @@ int main() {
         uint16_t TZr = (data[i+7] << 8) | data[i+8];
         //push_back = ajouter à la fin les varibales (créé une nouvelle ligne)
         markers_pos.push_back({IDc, Xr, Yr, Zr, TZr});
-        std::cout << IDc << Xr << Yr << Zr << TZr << std::endl;
+        std::cout << std::dec << IDc << " " << Xr << " " << Yr << " " << Zr << " " << TZr << std::endl;
     }
 
     return XB_E_SUCCESS;
